@@ -69,7 +69,7 @@ INTERDIT                [²&é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
 ";"                     {   return ';' ;}
 
 
-[ \t\v\n\f]+            { printf("%s",yytext);  }
-{INTERDIT}              { printf("ERROR");      }
+[ \t\v\n\r\f]+          { printf("%s",yytext);  }
+{INTERDIT}              { yyerror(yytext);      }
 .                       {}
 %%

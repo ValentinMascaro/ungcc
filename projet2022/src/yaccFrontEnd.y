@@ -1,6 +1,6 @@
 %{
-        #include <stdio.h>
-        #include <stdlib.h>
+        extern int yylineno;
+        #include "structure.h"
 %}
 
 %token IDENTIFIER CONSTANT SIZEOF
@@ -13,7 +13,8 @@
 
 %union {
         char* label;
-        char* type;
+        char* type_t;
+        struct _symbole *symbole;
 }
 
 %type <label> IDENTIFIER
@@ -23,18 +24,20 @@
 %type <label> primary_expression
 %type <label> postfix_expression
 
-%type <label> declarator
-%type <label> direct_declarator
+%type <symbole> declarator
+%type <symbole> direct_declarator
+%type <symbole> declaration
 
-%type <type> declaration_specifiers
-%type <type> type_specifier
+
+%type <type_t> declaration_specifiers
+%type <type_t> type_specifier
 
 %start program
 %%
 
 primary_expression
-        : IDENTIFIER    {$$=$1;}
-        | CONSTANT
+        : IDENTIFIER    {/*$$=$1;*/}
+        | CONSTANT      {/*$$=$1;*/}
         | '(' expression ')'
         ;
 
@@ -58,8 +61,8 @@ unary_expression
 
 unary_operator
         : '&'
-        | '*'
-        | '-'
+        | '*'                 
+        | '-'                    {printf("expression moins unaire");}   
         | 'PTR_OP'               { /* pointeur vers champ de structure manquant, on le rajoute pour avoir les 4 operateurs unaires*/}
          ;  
                 
@@ -73,7 +76,7 @@ multiplicative_expression
 additive_expression
         : multiplicative_expression
         | additive_expression '+' multiplicative_expression
-        | additive_expression '-' multiplicative_expression
+        | additive_expression '-' multiplicative_expression {printf("expression moins");}
         ;
 
 relational_expression
@@ -101,12 +104,18 @@ logical_or_expression
         ;
 
 expression
-        : logical_or_expression
+        : logical_or_expression                 
         | unary_expression '=' expression       {printf("%s = %s;", $1,$3);}
         ;
 
 declaration
-        : declaration_specifiers declarator ';' {printf("%s %s",$1,$2); /* déclarateur lui*/} 
+        : declaration_specifiers declarator ';' {
+                                                $2->type_symbol=$1;
+                                                $$=$2;
+                                                verif_redefinition($2->label);
+                                                TABLE[ACC]=$$;
+                                                nouvelle_adresse();
+                                                printf("type : %s , nom : %s : ",$$->type_symbol,$$->label);} 
         | struct_specifier ';'
         ;
 
@@ -116,15 +125,15 @@ declaration_specifiers
         ;
 
 type_specifier
-        : VOID
-        | INT                   {$$="int";  }
-        | struct_specifier
+        : VOID                  { $$="VOID"; /*TODO Doit fonctionner pour les fonctions ,ne doit pas fonctionner pour des variables*/ }
+        | INT                   { $$="INT";  }
+        | struct_specifier      {     }
         ;
 
 struct_specifier
         : STRUCT IDENTIFIER '{' struct_declaration_list '}'
         | STRUCT '{' struct_declaration_list '}'
-        | STRUCT IDENTIFIER
+        | STRUCT IDENTIFIER     {}
         ;
 
 struct_declaration_list
@@ -142,7 +151,7 @@ declarator
         ;
 
 direct_declarator
-        : IDENTIFIER       {$$=$1;}  
+        : IDENTIFIER       { $$=creer_symbole($1,NULL); }   
         | '(' declarator ')'
         | direct_declarator '(' parameter_list ')' 
         | direct_declarator '(' ')'
@@ -217,7 +226,7 @@ function_definition
         ;
 
 %%
-int yyerror( char *s)
+int yyerror(char *s)
 {
         fprintf(stderr,"%s\n",s);
         exit(1);
