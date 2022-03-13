@@ -3,7 +3,7 @@
         #include "structure.h"
 %}
 
-%token IDENTIFIER CONSTANT SIZEOF
+%token  SIZEOF
 %token PTR_OP LE_OP GE_OP EQ_OP NE_OP
 %token AND_OP OR_OP
 %token EXTERN
@@ -17,17 +17,22 @@
         struct _symbole *symbole;
 }
 
-%type <label> IDENTIFIER
-%type <label> CONSTANT
-%type <label> expression
-%type <label> unary_expression
-%type <label> primary_expression
-%type <label> postfix_expression
+%token <label> IDENTIFIER
+%token <label> CONSTANT
 
+%type <symbole> expression
+%type <symbole> unary_expression
+%type <symbole> primary_expression
+%type <symbole> postfix_expression
+%type <symbole> multiplicative_expression
+%type <symbole> additive_expression
+%type <symbole> equality_expression
 %type <symbole> declarator
 %type <symbole> direct_declarator
 %type <symbole> declaration
-
+%type <symbole> relational_expression
+%type <symbole> logical_and_expression
+%type <symbole> logical_or_expression
 
 %type <type_t> declaration_specifiers
 %type <type_t> type_specifier
@@ -36,13 +41,14 @@
 %%
 
 primary_expression
-        : IDENTIFIER    {/*$$=$1;*/}
-        | CONSTANT      {/*$$=$1;*/}
-        | '(' expression ')'
+        : IDENTIFIER    {$$=search_by_label($1);
+                        }
+        | CONSTANT      {$$=creer_symbole($1,"INT");}
+        | '(' expression ')' {/* TODO voir s'il y a que du int */}
         ;
 
 postfix_expression
-        : primary_expression
+        : primary_expression  { $$ = $1;}
         | postfix_expression '(' ')'
         | postfix_expression '(' argument_expression_list ')'
         | postfix_expression PTR_OP IDENTIFIER  {/* -> ? */ }
@@ -68,19 +74,27 @@ unary_operator
                 
 
 multiplicative_expression
-        : unary_expression      ;
-        | multiplicative_expression '*' unary_expression
-        | multiplicative_expression '/' unary_expression
+        : unary_expression      {$$ = $1;}
+        | multiplicative_expression '*' unary_expression  {$$ = creer_symbole("*","INT");
+                                                                verif_type($$,$3);
+                                                               }
+        | multiplicative_expression '/' unary_expression {$$ = creer_symbole("/","INT");
+                                                                verif_type($$,$3);
+                                                                }
         ;
 
 additive_expression
         : multiplicative_expression
-        | additive_expression '+' multiplicative_expression
-        | additive_expression '-' multiplicative_expression {printf("expression moins");}
+        | additive_expression '+' multiplicative_expression {$$ = creer_symbole("+","INT");
+                                                                verif_type($$,$3);
+                                                                }
+        | additive_expression '-' multiplicative_expression {$$ = creer_symbole("-","INT");
+                                                                verif_type($$,$3);
+                                                                }
         ;
 
 relational_expression
-        : additive_expression
+        : additive_expression   {$$=$1;}
         | relational_expression '<' additive_expression
         | relational_expression '>' additive_expression
         | relational_expression LE_OP additive_expression
@@ -88,24 +102,25 @@ relational_expression
         ;
 
 equality_expression
-        : relational_expression
+        : relational_expression { $$ = $1;}
         | equality_expression EQ_OP relational_expression
         | equality_expression NE_OP relational_expression
         ;
 
 logical_and_expression
-        : equality_expression
+        : equality_expression {$$ = $1;}
         | logical_and_expression AND_OP equality_expression
         ;
 
 logical_or_expression
-        : logical_and_expression
+        : logical_and_expression {$$ = $1;}
         | logical_or_expression OR_OP logical_and_expression
         ;
 
 expression
-        : logical_or_expression                 
-        | unary_expression '=' expression       {printf("%s = %s;", $1,$3);}
+        : logical_or_expression        {$$ = $1;}         
+        | unary_expression '=' expression       {verif_type($1,$3);
+                                                printf("bon type");}
         ;
 
 declaration
@@ -113,8 +128,7 @@ declaration
                                                 $2->type_symbol=$1;
                                                 $$=$2;
                                                 verif_redefinition($2->label);
-                                                TABLE[ACC]=$$;
-                                                nouvelle_adresse();
+                                                TABLE[ACC]=ajouter_symbole(TABLE[ACC],$$);
                                                 printf("type : %s , nom : %s : ",$$->type_symbol,$$->label);} 
         | struct_specifier ';'
         ;
@@ -235,7 +249,18 @@ int main(void)
 {
         /*flex lexFrontEnd.l
         yacc yaccFrontEnd.y -d
-        gcc lex.yy.c y.tab.c -o testYacc */
+        gcc lex.yy.c y.tab.c structure.c -o testYacc */
         yyparse();
+         int ACC_copie = ACC;
+         while(ACC_copie >= 0) {
+       struct _symbole *courant = TABLE[ACC_copie];
+       
+        while(courant != NULL){
+          printf("Variable : %s\n",courant->label);
+           courant=courant->frere;
+        } 
+        ACC_copie--;
+    }
+   
         return 0;
 }
