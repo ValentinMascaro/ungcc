@@ -6,6 +6,7 @@ INTERDIT                [²&é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
 %{
 
 #include "y.tab.h"
+#include "./src/structure.h"
 
 
 /* Ne g re pas les commentaires. A rajouter */
@@ -61,7 +62,7 @@ INTERDIT                [²&é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
 "="                     {   return '=';}
 
 
-"{"                     {   return '{' ;}
+"{"                     {  return '{' ;}
 "}"                     {   return '}' ;}
 "("                     {   return '(' ;}
 ")"                     {   return ')' ;}
@@ -69,7 +70,7 @@ INTERDIT                [²&é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
 ";"                     {   return ';' ;}
 
 
-[ \t\v\n\r\f]+          { printf("%s",yytext);  }
+[ \t\v\n\r\f]+          { /*printf("%s",yytext); */ }
 {INTERDIT}              { yyerror(yytext);      }
 .                       {}
 %%

@@ -52,11 +52,13 @@ typedef struct _param{
 struct symbole *TABLE[TAILLE];
 
 void nouvelle_adresse();
+void liberer_tables();
 symbole *creer_symbole(char* label_t, char* type_t);
+symbole *creer_symbole_fonction(char* label_t, char* type_t, symbole *liste_param);
 symbole *ajouter_symbole(symbole *actuel, symbole *futur);
-void verif_redefinition(char *label);
+void verif_redefinition(char *label,symbole *table_a_verifier);
 char *find_type(symbole *expression1);
 symbole *search_by_label(char *label);
 void verif_type(symbole *expression1, symbole *expression2);
-
+void affiche_memoire_symbole();
 #endif

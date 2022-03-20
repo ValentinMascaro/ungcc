@@ -1,6 +1,6 @@
 %{
         extern int yylineno;
-        #include "structure.h"
+        #include "./src/structure.h"
 %}
 
 %token  SIZEOF
@@ -20,6 +20,10 @@
 %token <label> IDENTIFIER
 %token <label> CONSTANT
 
+%type <symbole> parameter_list_creator
+%type <symbole> function_definition
+%type <symbole> parameter_declaration
+%type <symbole> parameter_list
 %type <symbole> expression
 %type <symbole> unary_expression
 %type <symbole> primary_expression
@@ -30,6 +34,7 @@
 %type <symbole> declarator
 %type <symbole> direct_declarator
 %type <symbole> declaration
+%type <symbole> declaration_list
 %type <symbole> relational_expression
 %type <symbole> logical_and_expression
 %type <symbole> logical_or_expression
@@ -44,7 +49,7 @@ primary_expression
         : IDENTIFIER    {$$=search_by_label($1);
                         }
         | CONSTANT      {$$=creer_symbole($1,"INT");}
-        | '(' expression ')' {/* TODO voir s'il y a que du int */}
+        | '(' expression ')' { $$ = $2;}
         ;
 
 postfix_expression
@@ -76,20 +81,20 @@ unary_operator
 multiplicative_expression
         : unary_expression      {$$ = $1;}
         | multiplicative_expression '*' unary_expression  {$$ = creer_symbole("*","INT");
-                                                                verif_type($$,$3);
+                                                                verif_type($1,$3);
                                                                }
         | multiplicative_expression '/' unary_expression {$$ = creer_symbole("/","INT");
-                                                                verif_type($$,$3);
+                                                                verif_type($1,$3);
                                                                 }
         ;
 
 additive_expression
         : multiplicative_expression
         | additive_expression '+' multiplicative_expression {$$ = creer_symbole("+","INT");
-                                                                verif_type($$,$3);
+                                                                verif_type($1,$3);
                                                                 }
         | additive_expression '-' multiplicative_expression {$$ = creer_symbole("-","INT");
-                                                                verif_type($$,$3);
+                                                                verif_type($1,$3);
                                                                 }
         ;
 
@@ -119,17 +124,21 @@ logical_or_expression
 
 expression
         : logical_or_expression        {$$ = $1;}         
-        | unary_expression '=' expression       {verif_type($1,$3);
-                                                printf("bon type");}
+        | unary_expression '=' expression       {verif_type_affectation($1,$3);
+                                                printf("%s %s \n",$1->label,$3->label);
+                                                printf("param %d \n",$1->nb_param);}
         ;
 
 declaration
         : declaration_specifiers declarator ';' {
                                                 $2->type_symbol=$1;
                                                 $$=$2;
-                                                verif_redefinition($2->label);
-                                                TABLE[ACC]=ajouter_symbole(TABLE[ACC],$$);
-                                                printf("type : %s , nom : %s : ",$$->type_symbol,$$->label);} 
+                                                //printf("ACC : %d \n",ACC);
+                                                verif_redefinition($2->label,TABLE[ACC]);
+                                               // printf("uhkh");
+                                                TABLE[ACC]=ajouter_symbole(TABLE[ACC],$2);
+                                               
+                                                } 
         | struct_specifier ';'
         ;
 
@@ -167,21 +176,31 @@ declarator
 direct_declarator
         : IDENTIFIER       { $$=creer_symbole($1,NULL); }   
         | '(' declarator ')'
-        | direct_declarator '(' parameter_list ')' 
-        | direct_declarator '(' ')'
+        | direct_declarator '(' parameter_list_creator ')' {$$=creer_symbole_fonction($1->label,NULL,$3);
+                                                               
+                                                               }
+       
         ;
-
+parameter_list_creator
+        : parameter_list        {nouvelle_adresse();
+                                 TABLE[ACC]=ajouter_symbole($$,TABLE[ACC]);
+                                 $$=$1;}
+        | {nouvelle_adresse();
+                $$=NULL;}
 parameter_list
-        : parameter_declaration
-        | parameter_list ',' parameter_declaration
+        : parameter_declaration {$$=$1;}
+        | parameter_list ',' parameter_declaration {verif_redefinition($3->label,$1);
+                                                        $1=ajouter_symbole($1,$3);
+                                                        $$=$1;}
         ;
 
 parameter_declaration
-        : declaration_specifiers declarator
+        : declaration_specifiers declarator {$2->type_symbol=$1;
+                                                $$=$2;}
         ;
 
 statement
-        : compound_statement
+        : compound_statement 
         | expression_statement
         | selection_statement
         | iteration_statement
@@ -189,15 +208,15 @@ statement
         ;
 
 compound_statement
-        : '{' '}'
+        : '{'  '}'        
         | '{' statement_list '}'
-        | '{' declaration_list '}'
-        | '{' declaration_list statement_list '}'
-        ;
+        | '{' declaration_list '}' { liberer_tables();}
+        | '{' declaration_list statement_list  '}' { liberer_tables();}
+        ;       
 
 declaration_list
-        : declaration
-        | declaration_list declaration
+        : {nouvelle_adresse();}
+        | declaration_list declaration 
         ;
 
 statement_list
@@ -226,17 +245,23 @@ jump_statement
         ;
 
 program
-        : external_declaration
-        | program external_declaration
+        : external_declaration {}
+        | program external_declaration {}
         ;
 
 external_declaration
-        : function_definition
-        | declaration
+        : function_definition {}
+        | declaration 
         ;
 
 function_definition
-        : declaration_specifiers declarator compound_statement
+        : declaration_specifiers declarator compound_statement {$2->type_symbol=$1;
+                                                                $$=$2;
+                                                                verif_redefinition($2,TABLE[ACC]);
+                                                                TABLE[ACC]=ajouter_symbole(TABLE[ACC],$2);
+                                                                liberer_tables();
+                                                                liberer_tables();
+                                                                }
         ;
 
 %%
@@ -247,20 +272,13 @@ int yyerror(char *s)
 }
 int main(void)
 {
-        /*flex lexFrontEnd.l
+        /* compile projet ->
+        flex lexFrontEnd.l
         yacc yaccFrontEnd.y -d
         gcc lex.yy.c y.tab.c structure.c -o testYacc */
         yyparse();
-         int ACC_copie = ACC;
-         while(ACC_copie >= 0) {
-       struct _symbole *courant = TABLE[ACC_copie];
-       
-        while(courant != NULL){
-          printf("Variable : %s\n",courant->label);
-           courant=courant->frere;
-        } 
-        ACC_copie--;
-    }
+        printf("FIN\n");
+        affiche_memoire_symbole();
    
         return 0;
 }
