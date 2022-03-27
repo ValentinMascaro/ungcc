@@ -20,6 +20,12 @@
 %token <label> IDENTIFIER
 %token <label> CONSTANT
 
+%type <symbole> unary_operator
+
+%type <symbole> struct_identifier_declarator
+%type <symbole> struct_declaration_list
+%type <symbole> struct_declaration
+%type <symbole> struct_specifier
 %type <symbole> parameter_list_creator
 %type <symbole> function_definition
 %type <symbole> parameter_declaration
@@ -66,14 +72,15 @@ argument_expression_list
 
 unary_expression
         : postfix_expression { $$=$1; }
-        | unary_operator unary_expression
+        | unary_operator unary_expression {verif_type($1,$2);
+                                                $$=creer_symbole("","");}
         | SIZEOF unary_expression
         ;
 
 unary_operator
         : '&'
         | '*'                 
-        | '-'                    {printf("expression moins unaire");}   
+        | '-'                    {}   
         | 'PTR_OP'               { /* pointeur vers champ de structure manquant, on le rajoute pour avoir les 4 operateurs unaires*/}
          ;  
                 
@@ -125,51 +132,102 @@ logical_or_expression
 expression
         : logical_or_expression        {$$ = $1;}         
         | unary_expression '=' expression       {verif_type_affectation($1,$3);
-                                                printf("%s %s \n",$1->label,$3->label);
-                                                printf("param %d \n",$1->nb_param);}
+                                                
+                                                }
         ;
 
 declaration
         : declaration_specifiers declarator ';' {
-                                                $2->type_symbol=$1;
-                                                $$=$2;
-                                                //printf("ACC : %d \n",ACC);
-                                                verif_redefinition($2->label,TABLE[ACC]);
-                                               // printf("uhkh");
-                                                TABLE[ACC]=ajouter_symbole(TABLE[ACC],$2);
                                                
+                                                
+                                                
+                                                verif_redefinition($2->label,TABLE[ACC]);
+                                                if($2->contenu_adresse==NULL){
+                                                         $2->type_symbol=$1;
+                                                }
+                                                else{
+                                                        $2->contenu_adresse->type_symbol=$1;
+                                                }
+                                                $$=$2;
+                                                TABLE[ACC]=ajouter_symbole(TABLE[ACC],$2);
+                                                
                                                 } 
-        | struct_specifier ';'
+        | struct_specifier ';'  {}
         ;
 
 declaration_specifiers
         : EXTERN type_specifier
-        | type_specifier        {$$=$1;}
+        | type_specifier        {$$=$1;
+                                }
         ;
 
 type_specifier
-        : VOID                  { $$="VOID"; /*TODO Doit fonctionner pour les fonctions ,ne doit pas fonctionner pour des variables*/ }
+        : VOID                  { $$="VOID"; }
         | INT                   { $$="INT";  }
-        | struct_specifier      {     }
+        | struct_specifier      {  $$=$1->label;
+                                  }
         ;
-
+struct_identifier_declarator
+        : STRUCT IDENTIFIER {
+                                       char* buf = malloc(256);
+                                       snprintf(buf,256,"struct %s",$2);
+                                       char* copy = malloc(256);
+                                       strcpy(copy,buf);
+                                       $$=creer_symbole(copy,"STRUCT");
+                                       //$$->contenu=$4;
+                                       verif_redefinition($$->label,TABLE[ACC]);
+                                       TABLE[ACC]=ajouter_symbole($$,TABLE[ACC]);
+                                       //affiche_memoire_symbole();     
+                                       free(buf);
+        }
 struct_specifier
-        : STRUCT IDENTIFIER '{' struct_declaration_list '}'
-        | STRUCT '{' struct_declaration_list '}'
-        | STRUCT IDENTIFIER     {}
+        : struct_identifier_declarator '{' struct_declaration_list '}' {
+                                       /* TODO le struct_identifier ne doit pas permettre de trouver des * */
+                                       $1->contenu = $3;
+                                       $$=$1;
+                                       /* char tmp2[103];
+                                        sprintf(tmp2,"struct_%s",$2);
+                                        $$=creer_symbole(tmp2,"STRUCT");
+                                        printf("Nom de structure : %s \n",$$->label);
+                                        $$->contenu = $4;
+                                        TABLE[ACC]=ajouter_symbole($$,TABLE[ACC]);
+                                        affiche_memoire_symbole(); */
+                                        
+        }
+        | STRUCT '{' struct_declaration_list '}' {/* Attention pas de nom faire gaffe backend*/}
+        | STRUCT IDENTIFIER     {
+               
+                char* buf = malloc(256);
+                snprintf(buf,256,"struct %s",$2);
+                char* copy = malloc(256);
+                 strcpy(copy,buf);
+                search_by_label(copy);
+                $$=creer_symbole(copy,NULL);
+                free(buf);
+                /*printf("COUPABLE 2");
+                char tmp[103]; // 97 '- 199_'
+                sprintf(tmp,"struct_%s",$2);
+                search_by_label_void(tmp);
+                $$=creer_symbole(tmp,NULL);*/
+                } 
         ;
 
 struct_declaration_list
-        : struct_declaration
-        | struct_declaration_list struct_declaration
+        : struct_declaration {$$=$1;}
+        | struct_declaration_list struct_declaration { verif_redefinition($2->label,$1);
+                                                        $1=ajouter_symbole($1,$2);
+                                                       
+                                                        $$=$1;}
         ;
 
 struct_declaration
-        : type_specifier declarator ';' 
+        : type_specifier declarator ';' {$2->type_symbol=$1;
+                                        $$=$2;}
         ;
 
 declarator
-        : '*' direct_declarator
+        : '*' direct_declarator {$$=creer_symbole($2->label,"PTR");
+                                        $$->contenu_adresse=$2;}
         | direct_declarator {$$=$1;}
         ;
 
@@ -210,12 +268,15 @@ statement
 compound_statement
         : '{'  '}'        
         | '{' statement_list '}'
-        | '{' declaration_list '}' { liberer_tables();}
-        | '{' declaration_list statement_list  '}' { liberer_tables();}
+        | '{' declaration_list_local '}' { liberer_tables();}
+        | '{' declaration_list_local statement_list  '}' { liberer_tables();}   
         ;       
-
+declaration_list_local 
+        : {nouvelle_adresse;}
+        | declaration_list declaration {nouvelle_adresse();}
+        ;
 declaration_list
-        : {nouvelle_adresse();}
+        : {}
         | declaration_list declaration 
         ;
 
@@ -258,9 +319,8 @@ function_definition
         : declaration_specifiers declarator compound_statement {$2->type_symbol=$1;
                                                                 $$=$2;
                                                                 verif_redefinition($2,TABLE[ACC]);
+                                                                liberer_tables();
                                                                 TABLE[ACC]=ajouter_symbole(TABLE[ACC],$2);
-                                                                liberer_tables();
-                                                                liberer_tables();
                                                                 }
         ;
 

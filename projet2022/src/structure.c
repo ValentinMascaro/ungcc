@@ -1,5 +1,6 @@
 #include "structure.h"
 int ACC = 0;
+int adresseACC = 1;
 extern int yylineno;
 
 /* Creer un symbole pour associer un nom avec un type */
@@ -8,6 +9,10 @@ symbole *creer_symbole(char* label_t, char* type_t){
     nouveau_symbole->label = label_t;
     nouveau_symbole->type_symbol = type_t;
     nouveau_symbole->nb_param=-1;
+    nouveau_symbole->contenu = NULL;
+    nouveau_symbole->contenu_adresse = NULL;
+    nouveau_symbole->adresse=adresseACC;
+    adresseACC++;
     return nouveau_symbole;
 }
 symbole *creer_symbole_fonction(char* label_t, char* type_t, symbole *liste_param)
@@ -30,29 +35,30 @@ symbole *creer_symbole_fonction(char* label_t, char* type_t, symbole *liste_para
     return nouveau_symbole;
 }
 
-symbole *ajouter_symbole(symbole *actuel, symbole *futur){
-    if(actuel==NULL){
-        return futur;
+symbole *ajouter_symbole(symbole *dest, symbole *ajoute){
+    if(dest==NULL){
+        return ajoute;
     }
-    struct _symbole *courant = actuel;
+    struct _symbole *courant = dest;
     while(courant->frere != NULL){
         courant = courant->frere;
     }
-    courant->frere=futur;
-    return actuel;
+    courant->frere=ajoute;
+    return dest;
 }
 /* Creer une nouvelle adresse */
 void nouvelle_adresse(){
     /* Assurer de ne pas avoir de potentielles erreures (pas super a cause du While)*/
-    while (TABLE[ACC] != NULL) {
+   // while (TABLE[ACC] != NULL) {
         ACC++;
-    }
+    //}
 }
 
 void liberer_tables(){
    if (ACC > 0){
-       affiche_memoire_symbole();
-       printf("--------\n");
+     //  printf("Debut_Liberation\n");
+     //  affiche_memoire_symbole();
+     //  printf("Fin_Liberation\n");
     TABLE[ACC]=NULL;   
     ACC--;
    }
@@ -70,6 +76,21 @@ symbole *search_by_label(char *label){
         while(courant != NULL){
            if(!strcmp(courant->label,label)){
                return courant;
+           }
+           courant=courant->frere;
+        } 
+        ACC_copie--;
+    }
+    erreur("la variable n'est pas defini",label);
+}
+void search_by_label_void(char *label){
+    int ACC_copie = ACC;
+    while(ACC_copie >= 0) {
+       struct _symbole *courant = TABLE[ACC_copie];
+        while(courant != NULL){
+           if(!strcmp(courant->label,label)){
+     //          return courant;
+            return 0;
            }
            courant=courant->frere;
         } 
@@ -127,7 +148,8 @@ void verif_type_affectation(symbole *expression1, symbole *expression2){
 /* --------------------------------------- */
 /* Gerer les messages d'erreures : la description d 'erreur en bleu la virgule entre en blanc et la ligne en rouge*/
 void erreur(char *description, char *terme_concerne) {
-    char destination[100];
+    affiche_memoire_symbole(); 
+    char destination[96];
     if (terme_concerne != NULL) {
         sprintf(destination,"\x1B[34m%s : %s \x1b[31m \x1b[37m ,  \x1b[31m ligne : %d\x1B[   0m\n", terme_concerne, description, yylineno );
         yyerror(destination);
@@ -135,7 +157,7 @@ void erreur(char *description, char *terme_concerne) {
         sprintf("\x1B[31m%s, ligne : %d\x1B[0m\n", description, yylineno );
         yyerror(destination);
     }
-    
+       
 }
 
 void affiche_memoire_symbole(){
@@ -143,7 +165,22 @@ void affiche_memoire_symbole(){
          while(ACC_copie >= 0) {
         struct _symbole *courant = TABLE[ACC_copie];
         while(courant != NULL){
-          printf("ACC : %d Variable : %s\n",ACC_copie,courant->label);
+          printf("ACC : %d Variable : %s | ",ACC_copie,courant->label);
+          if(courant->type_symbol != NULL)
+          {
+              printf("Type : %s",courant->type_symbol);
+          }
+          if(courant->contenu != NULL)
+          {
+              printf("\n Contenu : \n");
+              struct _symbole *contenu_courant = courant->contenu;
+              while(contenu_courant != NULL)
+              {
+                  printf("      Var : %s | ", contenu_courant->label);
+                  contenu_courant=contenu_courant->frere;
+              }
+          }
+          printf("\n");
            courant=courant->frere;
         } 
         ACC_copie--;

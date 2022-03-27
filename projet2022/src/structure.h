@@ -1,7 +1,7 @@
 /*
 Auteur : Mascaro Valentin, Marco Gazzera
 Version :  0.1
-Date derniere modif : 10.03.2022
+Date derniere modif : 27.03.2022
 Resume : Gere la table de donnee en vue de la verification semantique.
 */
 
@@ -13,7 +13,7 @@ Resume : Gere la table de donnee en vue de la verification semantique.
 #include <stdio.h>
 #define TAILLE 103
 int ACC;
-
+int adresseACC;
 enum type_arbre{
 	MON_FONCTION, 
 	MON_ITERATION,  // for / while  
@@ -39,8 +39,11 @@ typedef struct _arbre {
 typedef struct _symbole{
 	char *label;
 	char *type_symbol ;
-	struct _symbole *frere;
+	struct _symbole *frere; 
 	struct _param *param_t;
+	struct _symbole *contenu;
+	struct _symbole *contenu_adresse; // exemple :  int *b; *adresse pointe vers un symbole INT
+	int adresse;
 	int nb_param;
 } symbole;
 
@@ -59,6 +62,7 @@ symbole *ajouter_symbole(symbole *actuel, symbole *futur);
 void verif_redefinition(char *label,symbole *table_a_verifier);
 char *find_type(symbole *expression1);
 symbole *search_by_label(char *label);
+void search_by_label_void(char *label);
 void verif_type(symbole *expression1, symbole *expression2);
 void affiche_memoire_symbole();
 #endif
