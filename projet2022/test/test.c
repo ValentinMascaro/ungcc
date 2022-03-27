@@ -1,41 +1,35 @@
-int a;
-int main(){
-int b;
+/* TODO LUNDI
+contenu d'une adresse bidon
+gerer les unaires
+*/
 
-    {
-        int c;
-        {
-            int d;
-            a = b + c * d;
-        }
-    }
-    {
-        int e;
-        
-    }
-    if(1==1)
-    {
-       
-    }
-    else{
-        
-    }
-return 0;
-}
+struct montype{
+  int a;
+  int b;
+};
 
-int f2(int F2A, int F2B)
+struct montype *monptr;
+
+
+
+/*#include <stdio.h>
+#include <stdlib.h>
+
+int main()
 {
-  int F2C;
+  int *a;
+  int *b; 
+  int *c;
+  a=malloc(sizeof(int));
+  b=malloc(sizeof(int));
+  c=malloc(sizeof(int));
+  printf("%u\n",&a);
+  printf("%u\n",&b);
+  printf("%u\n",&c);
 
 }
+*/
 
-int f3()
-{
  
-}
 
-int f4()
-{
-   
-    return 1;
-}
+
