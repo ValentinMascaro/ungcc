@@ -1,35 +1,19 @@
-/* TODO LUNDI
-contenu d'une adresse bidon
-gerer les unaires
-*/
-
-struct montype{
+struct lastruct {
   int a;
-  int b;
+  int *b;
+  void c;
+  void *d;
+  struct lastruct *e;
+
 };
 
-struct montype *monptr;
-
-
-
-/*#include <stdio.h>
-#include <stdlib.h>
+int *a;
 
 int main()
 {
-  int *a;
-  int *b; 
-  int *c;
-  a=malloc(sizeof(int));
-  b=malloc(sizeof(int));
-  c=malloc(sizeof(int));
-  printf("%u\n",&a);
-  printf("%u\n",&b);
-  printf("%u\n",&c);
-
-}
-*/
-
- 
-
+  int a;
+  int *b;
+  struct lastruct *c;
+  a  = -(&(c->e)->e->e->e->e->e->c);
+  }
 
