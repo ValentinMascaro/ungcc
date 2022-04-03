@@ -14,13 +14,14 @@
 %union {
         char* label;
         char* type_t;
+        int justepourlesswitch;
         struct _symbole *symbole;
 }
 
 %token <label> IDENTIFIER
 %token <label> CONSTANT
 
-%type <symbole> unary_operator
+%type <justepourlesswitch> unary_operator
 
 %type <symbole> struct_identifier_declarator
 %type <symbole> struct_declaration_list
@@ -62,7 +63,17 @@ postfix_expression
         : primary_expression  { $$ = $1;}
         | postfix_expression '(' ')'
         | postfix_expression '(' argument_expression_list ')'
-        | postfix_expression PTR_OP IDENTIFIER  {/* -> ? */ }
+        | postfix_expression PTR_OP IDENTIFIER  {if(strcmp($1->type_symbol,"PTR") ){
+                                                       
+                                                                erreur("pas un pointeur vers structure",$1->label);
+                                                        }else{
+                                                               
+                                                                struct _symbole *lastruct = search_by_label_struct($1->contenu_adresse->type_symbol);
+                                                               
+                                                                struct _symbole *leMembre = find_membre(lastruct,$3);
+                                                                $$ = leMembre;
+                                                                //printf("TROUVER %s | %s \n",leMembre->label,leMembre->type_symbol);
+                                                        };}
         ;
 
 argument_expression_list
@@ -72,16 +83,54 @@ argument_expression_list
 
 unary_expression
         : postfix_expression { $$=$1; }
-        | unary_operator unary_expression {verif_type($1,$2);
-                                                $$=creer_symbole("","");}
-        | SIZEOF unary_expression
+        | unary_operator unary_expression {
+                                                             
+                                                 switch($1) {
+
+                                                        case 1:$$=creer_symbole("adresse","adresse");break; /* & */
+                                                        case 2:
+                                                                if(strcmp("PTR",$2->type_symbol))
+                                                                {   /* * */  
+                                                               
+                                                                 erreur("Ce n'est pas un pointeur",$2->label);
+                                                                }
+                                                               
+                                                                $$=creer_symbole("dereference",$2->contenu_adresse->type_symbol);
+                                                              
+                                                               break;
+                                                        case 3:
+                                                        if(!strcmp($2->type_symbol,"INT"))
+                                                        {
+                                                         $$=creer_symbole("MOINSUNAIRE","INT"); /* - */
+                                                        break;
+                                                        }
+                                                        erreur("Moins unaire avec un non int",$2->label);
+                                                                
+                                                        
+                                                }
+                
+                                                /*if( (!strcmp('-',$1) ) && (!strcmp($2->type_symbol,"INT")))
+                                                {
+                                                        $$=creer_symbole("MOINSUNAIRE","INT");
+                                                }
+                                                else{
+                                                        if( (!strcmp('*',$1) ) && (!strcmp($2->type_symbol,"PTR")))
+                                                        { 
+                                                                $$=creer_symbole("dereference",$2->contenu_adresse->type_symbol);
+                                                        }
+                                                        else{
+                                                                if( (!strcmp('&',$1) ) && (!strcmp($2->type_symbol,"INT")))
+                                                        }
+                                                }*/
+                                                }
+
+        | SIZEOF unary_expression       { $$ = creer_symbole($2->label,"INT");}
         ;
 
 unary_operator
-        : '&'
-        | '*'                 
-        | '-'                    {}   
-        | 'PTR_OP'               { /* pointeur vers champ de structure manquant, on le rajoute pour avoir les 4 operateurs unaires*/}
+        : '&'                   {$$=1;}
+        | '*'                   {$$=2;}
+        | '-'                   {$$=3;}  
          ;  
                 
 
@@ -132,7 +181,7 @@ logical_or_expression
 expression
         : logical_or_expression        {$$ = $1;}         
         | unary_expression '=' expression       {verif_type_affectation($1,$3);
-                                                
+                                                printf("%s vs %s\n",$1->type_symbol,$3->type_symbol);
                                                 }
         ;
 
@@ -144,8 +193,7 @@ declaration
                                                 verif_redefinition($2->label,TABLE[ACC]);
                                                 if($2->contenu_adresse==NULL){
                                                          $2->type_symbol=$1;
-                                                }
-                                                else{
+                                                }else{
                                                         $2->contenu_adresse->type_symbol=$1;
                                                 }
                                                 $$=$2;
@@ -164,13 +212,12 @@ declaration_specifiers
 type_specifier
         : VOID                  { $$="VOID"; }
         | INT                   { $$="INT";  }
-        | struct_specifier      {  $$=$1->label;
-                                  }
+        | struct_specifier      {  $$=$1->label;}
         ;
 struct_identifier_declarator
         : STRUCT IDENTIFIER {
                                        char* buf = malloc(256);
-                                       snprintf(buf,256,"struct %s",$2);
+                                       snprintf(buf,256," \"struct\" %s",$2);
                                        char* copy = malloc(256);
                                        strcpy(copy,buf);
                                        $$=creer_symbole(copy,"STRUCT");
@@ -198,11 +245,12 @@ struct_specifier
         | STRUCT IDENTIFIER     {
                
                 char* buf = malloc(256);
-                snprintf(buf,256,"struct %s",$2);
+                snprintf(buf,256," \"struct\" %s",$2);
                 char* copy = malloc(256);
                  strcpy(copy,buf);
-                search_by_label(copy);
+                search_by_label_struct(copy);
                 $$=creer_symbole(copy,NULL);
+               
                 free(buf);
                 /*printf("COUPABLE 2");
                 char tmp[103]; // 97 '- 199_'
@@ -218,11 +266,41 @@ struct_declaration_list
                                                         $1=ajouter_symbole($1,$2);
                                                        
                                                         $$=$1;}
+        | {$$=NULL;}
         ;
 
 struct_declaration
-        : type_specifier declarator ';' {$2->type_symbol=$1;
-                                        $$=$2;}
+        : type_specifier declarator ';' {
+               
+              
+                char *buf = malloc(256);
+                
+                char *substring=malloc(256);
+                strcpy(buf,$1);
+                substring= strtok(buf,"\"");
+                substring= strtok(NULL,"\"");
+             
+                //printf("the thing in between quotes is '%s'\n", substring); merci https://stackoverflow.com/questions/19555434/how-to-extract-a-substring-from-a-string-in-c
+                                if(substring != NULL)
+                                {
+                                        if(!strcmp(substring,"struct"))
+                                        {
+                                            if($2->type_symbol==NULL)
+                                            {
+                                                    erreur("Declaration de structure sans pointeur",$2->label);
+                                            }
+                                            
+                                        }
+                                }
+                                        if($2->contenu_adresse==NULL){
+                                                $2->type_symbol=$1;
+                                        }else{
+                                                $2->contenu_adresse->type_symbol=$1;
+                                        }
+                
+                                        $$=$2;
+                                        free(buf);
+                                       }
         ;
 
 declarator
@@ -316,7 +394,13 @@ external_declaration
         ;
 
 function_definition
-        : declaration_specifiers declarator compound_statement {$2->type_symbol=$1;
+        : declaration_specifiers declarator compound_statement {if($2->type_symbol == NULL){
+                                                                        $2->type_symbol=$1;
+                                                                       // $$=$2;
+                                                                }else{
+                                                                        $2->contenu_adresse = creer_symbole($2->label,$1);
+                                                                        
+                                                                }
                                                                 $$=$2;
                                                                 verif_redefinition($2,TABLE[ACC]);
                                                                 liberer_tables();
@@ -325,13 +409,11 @@ function_definition
         ;
 
 %%
-int yyerror(char *s)
-{
+int yyerror(char *s){
         fprintf(stderr,"%s\n",s);
         exit(1);
 }
-int main(void)
-{
+int main(void){
         /* compile projet ->
         flex lexFrontEnd.l
         yacc yaccFrontEnd.y -d

@@ -1,7 +1,7 @@
 %option noyywrap
 D                       [0-9]
 L                       [a-zA-Z_]
-INTERDIT                [²&é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
+INTERDIT                [²é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
 
 %{
 
@@ -55,6 +55,7 @@ INTERDIT                [²&é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
 "=="                    {   return EQ_OP;      }
 "!="                    {   return NE_OP;     }
 
+"&"                     {   return '&';     }
 "+"                     {   return '+';}
 "*"                     {   return '*';}
 "-"                     {   return '-';}

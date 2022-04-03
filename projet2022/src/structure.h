@@ -42,7 +42,7 @@ typedef struct _symbole{
 	struct _symbole *frere; 
 	struct _param *param_t;
 	struct _symbole *contenu;
-	struct _symbole *contenu_adresse; // exemple :  int *b; *adresse pointe vers un symbole INT
+	struct _symbole *contenu_adresse; // exemple :  int *b; * alors que b = PTR adresse pointe vers un symbole INT
 	int adresse;
 	int nb_param;
 } symbole;
@@ -62,7 +62,10 @@ symbole *ajouter_symbole(symbole *actuel, symbole *futur);
 void verif_redefinition(char *label,symbole *table_a_verifier);
 char *find_type(symbole *expression1);
 symbole *search_by_label(char *label);
-void search_by_label_void(char *label);
+symbole *search_by_label_struct(char *label);
 void verif_type(symbole *expression1, symbole *expression2);
+symbole *find_membre(symbole *une_Struct,char *membre_rechercher);
+
 void affiche_memoire_symbole();
+
 #endif
