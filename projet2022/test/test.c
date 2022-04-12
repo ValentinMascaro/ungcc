@@ -1,19 +1,49 @@
-struct lastruct {
-  int a;
-  int *b;
-  void c;
-  void *d;
-  struct lastruct *e;
+extern int printd(int i);
 
+struct liste {
+  int valeur; 
+  struct liste *suivant;
 };
 
-int *a;
+struct pasliste {
+  int valeur; 
+  struct liste *suivant;
+};
+
+struct vraimentpasliste {
+  int valeur; 
+  struct liste *pasliste;
+};
+
+struct  {
+  int valeur; 
+  struct liste *suivant;
+};
+
+
+
+int *ptrInt(struct pasliste *a)
+{
+  int b;
+
+  return b;
+}
+
+int *i;
+int j;
+
+
+struct vraimentpasliste *truc(int a,int j)
+{
+  return 0;
+}
 
 int main()
 {
-  int a;
-  int *b;
-  struct lastruct *c;
-  a  = -(&(c->e)->e->e->e->e->e->c);
-  }
+  struct vraimentpasliste *c;
+  struct liste *d;
+  c = truc(1,2)->pasliste->suivant;
 
+}
+
+/*TODO   c = truc(1,2)(1,2)(1,2); est juste ;_; ne devrai pas*/
