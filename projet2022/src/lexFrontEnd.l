@@ -72,6 +72,6 @@ INTERDIT                [²é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
 
 
 [ \t\v\n\r\f]+          { /*printf("%s",yytext); */ }
-{INTERDIT}              { yyerror(yytext);      }
+{INTERDIT}              { yyerror(yytext);     }
 .                       {}
 %%

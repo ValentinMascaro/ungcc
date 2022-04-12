@@ -14,6 +14,7 @@ Resume : Gere la table de donnee en vue de la verification semantique.
 #define TAILLE 103
 int ACC;
 int adresseACC;
+int flag; // permet de savoir si l'on déclare un extern ou une fonction.
 enum type_arbre{
 	MON_FONCTION, 
 	MON_ITERATION,  // for / while  
@@ -45,6 +46,7 @@ typedef struct _symbole{
 	struct _symbole *contenu_adresse; // exemple :  int *b; * alors que b = PTR adresse pointe vers un symbole INT
 	int adresse;
 	int nb_param;
+	int var_or_func;
 } symbole;
 
 typedef struct _param{
@@ -53,7 +55,6 @@ typedef struct _param{
 }param;
 /* Creer un tableau de tous les symboles */
 struct symbole *TABLE[TAILLE];
-
 void nouvelle_adresse();
 void liberer_tables();
 symbole *creer_symbole(char* label_t, char* type_t);
@@ -65,7 +66,7 @@ symbole *search_by_label(char *label);
 symbole *search_by_label_struct(char *label);
 void verif_type(symbole *expression1, symbole *expression2);
 symbole *find_membre(symbole *une_Struct,char *membre_rechercher);
-
+void verif_param(symbole *fonction, symbole *parametre);
 void affiche_memoire_symbole();
 
 #endif
