@@ -24,6 +24,7 @@ enum type_arbre{
 	MON_APPEL, // f ( )
 	MON_VARIABLE,
 	MON_DECLARATION,
+	MON_AFFECT,
 	MON_AUTRE  // Gerer plus tard 
 };
 
@@ -68,5 +69,5 @@ void verif_type(symbole *expression1, symbole *expression2);
 symbole *find_membre(symbole *une_Struct,char *membre_rechercher);
 void verif_param(symbole *fonction, symbole *parametre);
 void affiche_memoire_symbole();
-
+arbre *creer_arbre(char *label, type_arbre type, symbole *element, arbre *fils, arbre *frere)
 #endif

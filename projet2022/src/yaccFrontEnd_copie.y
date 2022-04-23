@@ -212,7 +212,7 @@ multiplicative_expression
         ;
 
 additive_expression
-        : multiplicative_expression {$$=$1;}
+        : multiplicative_expression
         | additive_expression '+' multiplicative_expression
         {
                 //printf("%s + %s\n",$1->type_symbol,$3->type_symbol);
@@ -300,7 +300,6 @@ expression
                         erreur("affectation vers une fonction impossible",$1->label);
                 }
                 $$=creer_symbole("affect",$1->type_symbol);
-                // $$ = creer_arbre("=",MON_AFFECT,creer_symbole("affect",$1->type_symbol),NULL,NULL);
         }
         ;
 

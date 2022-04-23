@@ -262,3 +262,41 @@ void affiche_memoire_symbole(){
         ACC_copie--;
     }
 }
+
+
+/////////////////////////////////
+//////////////ARBRE//////////////
+/////////////////////////////////
+
+arbre *creer_arbre(char *label, type_arbre type, symbole *element, arbre *fils, arbre *frere){
+     struct _arbre *nouvel_arbre = (arbre*) malloc(sizeof(arbre));
+    nouvel_arbre->type_arbre_t = typeEnum; 
+    nouvel_arbre->label=label;
+    nouvel_arbre->symbole_t = element;
+    nouvel_arbre->frere_t=frere;
+    nouvel_arbre->fils_t=fils;
+    return nouvel_arbre;
+}
+
+void *ajouter_frere(arbre *actuel, arbre *frere) {
+    struct _arbre *frere_courant = actuel;
+    while(frere_courant->frere_t != NULL) { // tant qu'on trouve des freres on continue de les parcourirs
+        frere_courant = frere_courant->frere_t;
+    }
+    frere_courant->frere_t = frere; // On viens de trouver un frere sans aucun frere, on lui rajoute donc son frere
+}
+
+
+
+/*
+1) Dans le code FrontENd, admettons que notre structure contient un int et une struct, que devons-nous faire en backend 
+pour traduire liste->int  ?
+
+2)int (*fact) (int n);  que se passe-t-il pour le code functions.c avec un ptr vers une fonction
+qui s'affecte comme une variable ?
+
+3) Il n'y a pas de définitions extern de malloc dans pointeurs.c , est-ce voulu ?
+
+4) Accepté vous les passages de rapport avec windows + wsl ? Ou y êtes vous allergique ?
+
+*/

@@ -9,7 +9,7 @@ INTERDIT                [²é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
 #include "./src/structure.h"
 
 
-/* Ne g re pas les commentaires. A rajouter */
+/* Ne gere pas les commentaires. A rajouter */
 /* Supprimer les lignes dont vous n'avez pas besoin. */
 
 %}
@@ -72,6 +72,6 @@ INTERDIT                [²é~"#'è`ç^à@°€$£¤¨µ%ù§.?■ÜÖ☺]
 
 
 [ \t\v\n\r\f]+          { /*printf("%s",yytext); */ }
-{INTERDIT}              { yyerror(yytext);     }
+{INTERDIT}              { erreur("caractere interdit",yytext);     }
 .                       {}
 %%
