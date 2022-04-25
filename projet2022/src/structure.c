@@ -268,11 +268,11 @@ void affiche_memoire_symbole(){
 //////////////ARBRE//////////////
 /////////////////////////////////
 
-arbre *creer_arbre(char *label, type_arbre type, symbole *element, arbre *fils, arbre *frere){
+arbre *creer_arbre(char *label, enum type_arbre typeEnum, symbole *element, arbre *fils, arbre *frere){
      struct _arbre *nouvel_arbre = (arbre*) malloc(sizeof(arbre));
     nouvel_arbre->type_arbre_t = typeEnum; 
     nouvel_arbre->label=label;
-    nouvel_arbre->symbole_t = element;
+    nouvel_arbre->symbol_t = element;
     nouvel_arbre->frere_t=frere;
     nouvel_arbre->fils_t=fils;
     return nouvel_arbre;
@@ -287,6 +287,106 @@ void *ajouter_frere(arbre *actuel, arbre *frere) {
 }
 
 
+void affiche_arbre2(arbre *un_arbre)
+{
+    /*
+    printf("a=%s \n  b=%s \n  c=%s \n  d=%s \n",
+         un_arbre->label,//a
+         un_arbre->fils_t->label,//a->b
+         un_arbre->fils_t->frere_t->label,//a->b-->c
+         un_arbre->fils_t->frere_t->frere_t->label //a->b-->c-->d
+         );*/
+printf("Arbre : %s \n + = %s \n Fils+ = %s \n FrereFils+ = %s \n ?? : %s \n"
+,un_arbre->label, // a
+un_arbre->fils_t->label, // +
+un_arbre->fils_t->fils_t->label, // 2
+un_arbre->fils_t->fils_t->frere_t->label, // 3
+"un_arbre->fils_t->fils_t->fils_t->label")  ;
+
+}
+
+
+void affiche_arbreN(arbre *un_arbre)
+{
+
+    if(un_arbre->fils_t==NULL)
+    {
+        printf("    Feuille : %s \n",un_arbre->label);
+        if(un_arbre->frere_t!=NULL)
+         {
+            affiche_arbre(un_arbre->frere_t);       
+        }
+    }
+    else
+    if(un_arbre->fils_t!=NULL)
+    {
+        printf("[Arbre : %s\n",un_arbre->label);
+        affiche_arbre(un_arbre->fils_t);
+        printf("]\n");
+        if(un_arbre->frere_t!=NULL)
+         {
+            affiche_arbre(un_arbre->frere_t);       
+        }
+    }
+}
+void affiche_arbre(arbre *un_arbre)
+{
+
+    if(un_arbre->fils_t==NULL)
+    {
+        printf("    Feuille : %s ,",un_arbre->label);
+        if(un_arbre->frere_t!=NULL)
+         {
+            affiche_arbre(un_arbre->frere_t);       
+        }
+    }
+    else
+    if(un_arbre->fils_t!=NULL)
+    {
+        printf("[Arbre : %s ,",un_arbre->label);
+        affiche_arbre(un_arbre->fils_t);
+        printf("]\n");
+        if(un_arbre->frere_t!=NULL)
+         {
+            affiche_arbre(un_arbre->frere_t);       
+        }
+    }
+}
+
+void affiche_arbre_old(arbre *un_arbre)
+{
+    if(un_arbre->fils_t==NULL)
+    {
+        printf("   Feuille :");
+        printf(" %s \n",un_arbre->label);
+        return 0;
+    }
+    else{
+        printf("Arbre :"); // A // + 
+        printf(" %s \n",un_arbre->label);
+        struct _arbre *courant ;
+        struct _arbre *courant_frere;
+        courant=un_arbre->fils_t; 
+        printf("Courant = %s \n",courant->label);
+        int i=0;
+        while(courant!=NULL)
+        {
+            courant_frere=courant->frere_t;
+            affiche_arbre(courant); // + // Feuille 2
+            while(courant_frere!=NULL)
+            {   
+                printf("Frere %d : %s",i,courant_frere->label);
+                i++;
+                //affiche_arbre(courant_frere);
+                courant_frere=courant_frere->frere_t;
+            }
+            printf("\n");
+            courant=courant->fils_t;
+    }
+    }
+    
+   
+}
 
 /*
 1) Dans le code FrontENd, admettons que notre structure contient un int et une struct, que devons-nous faire en backend 

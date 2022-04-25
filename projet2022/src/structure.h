@@ -25,13 +25,15 @@ enum type_arbre{
 	MON_VARIABLE,
 	MON_DECLARATION,
 	MON_AFFECT,
+	MON_FLECHE,
+	MON_CONSTANT,
 	MON_AUTRE  // Gerer plus tard 
 };
 
 typedef struct _arbre {
 	char *label ;  // ( a = 2;)  label = '='
 	enum type_arbre type_arbre_t;  // a = 2  , type_arbre = 'affectation'
-	struct _symbole *symbole_t; /* exemple :  a = 2 , c'est le symbole de cette ligne
+	struct _symbole *symbol_t; /* exemple :  a = 2 , c'est le symbole de cette ligne
 	 								dont le type est celui de a */
 	struct _arbre *frere_t; // a = 2;  a = 3 ; frere_t = arbre a = 3
 	struct _arbre *fils_t; // a
@@ -69,5 +71,7 @@ void verif_type(symbole *expression1, symbole *expression2);
 symbole *find_membre(symbole *une_Struct,char *membre_rechercher);
 void verif_param(symbole *fonction, symbole *parametre);
 void affiche_memoire_symbole();
-arbre *creer_arbre(char *label, type_arbre type, symbole *element, arbre *fils, arbre *frere)
+arbre *creer_arbre(char *label, enum type_arbre type, symbole *element, arbre *fils, arbre *frere);
+void *ajouter_frere(arbre *actuel, arbre *frere);
+void affiche_arbre(arbre *un_arbre);
 #endif
