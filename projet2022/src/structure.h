@@ -27,6 +27,7 @@ enum type_arbre{
 	MON_AFFECT,
 	MON_FLECHE,
 	MON_CONSTANT,
+	MON_NULL,
 	MON_AUTRE  // Gerer plus tard 
 };
 
@@ -44,20 +45,22 @@ typedef struct _symbole{
 	char *label;
 	char *type_symbol ;
 	struct _symbole *frere; 
-	struct _param *param_t;
+	struct _symbole *param_t;
 	struct _symbole *contenu;
 	struct _symbole *contenu_adresse; // exemple :  int *b; * alors que b = PTR adresse pointe vers un symbole INT
 	int adresse;
 	int nb_param;
 	int var_or_func;
 } symbole;
-
+/*
 typedef struct _param{
 	char *type_t;
 	struct _param *suivant_t;
-}param;
+}param;*/
 /* Creer un tableau de tous les symboles */
 struct symbole *TABLE[TAILLE];
+struct _arbre *Program;
+void init();
 void nouvelle_adresse();
 void liberer_tables();
 symbole *creer_symbole(char* label_t, char* type_t);

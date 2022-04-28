@@ -5,6 +5,13 @@ extern int yylineno;
 
 int flag = 0;
 
+void init(){
+    //Program = creer_arbre("Program",MON_AUTRE,NULL,creer_arbre("NULL",MON_NULL,NULL,NULL,NULL),NULL);
+    Program = creer_arbre("Program",MON_AUTRE,NULL,creer_arbre("NULL",MON_NULL,NULL,NULL,NULL),NULL);
+}
+
+
+
 /* Creer un symbole pour associer un nom avec un type */
 symbole *creer_symbole(char* label_t, char* type_t){
     struct _symbole *nouveau_symbole  = (symbole*) malloc(sizeof(symbole));
@@ -21,29 +28,53 @@ symbole *creer_symbole(char* label_t, char* type_t){
 }
 symbole *creer_symbole_fonction(char* label_t, char* type_t, symbole *liste_param){
    struct _symbole *nouveau_symbole  = creer_symbole(label_t,type_t);
-    struct _param *param_courant = (param*) malloc(sizeof(param));
+    struct _symbole *symbole_courant = (symbole*) malloc(sizeof(symbole));
     nouveau_symbole->nb_param=0;
     nouveau_symbole->param_t=liste_param;
     nouveau_symbole->var_or_func = 1;
-   nouveau_symbole->param_t = param_courant;
+   nouveau_symbole->param_t = symbole_courant;
     while(liste_param != NULL){
         nouveau_symbole->nb_param++;
-        param_courant->type_t = liste_param->type_symbol;
-        struct _param *nouveau_param = (param*) malloc(sizeof(param));
-        param_courant->suivant_t = nouveau_param;
+        symbole_courant->label=liste_param->label;
+        symbole_courant->type_symbol = liste_param->type_symbol;
+        struct _symbole *nouveau_param = (symbole*) malloc(sizeof(symbole));
+        symbole_courant->frere = nouveau_param;
         liste_param = liste_param->frere;
-        param_courant = param_courant->suivant_t;
+        symbole_courant = symbole_courant->frere;
+    }
+    return nouveau_symbole;
+}
+symbole *creer_symbole_fonction_old(char* label_t, char* type_t, symbole *liste_param){
+   struct _symbole *nouveau_symbole  = creer_symbole(label_t,type_t);
+    struct _symbole *symbole_courant = (symbole*) malloc(sizeof(symbole));
+    nouveau_symbole->nb_param=0;
+    nouveau_symbole->param_t=liste_param;
+    nouveau_symbole->var_or_func = 1;
+   nouveau_symbole->param_t = symbole_courant;
+    while(liste_param != NULL){
+        nouveau_symbole->nb_param++;
+        symbole_courant->label=liste_param->label;
+        symbole_courant->type_symbol = liste_param->type_symbol;
+        struct _symbole *nouveau_param = (symbole*) malloc(sizeof(symbole));
+        
+        symbole_courant->frere = nouveau_param;
+        liste_param = liste_param->frere;
+        symbole_courant = symbole_courant->frere;
     }
     return nouveau_symbole;
 }
 
 symbole *ajouter_symbole(symbole *dest, symbole *ajoute){
+    
     if(dest==NULL){
         return ajoute;
     }
+   
     struct _symbole *courant = dest;
+    
     while(courant->frere != NULL){
         courant = courant->frere;
+     
     }
     courant->frere=ajoute;
     return dest;
@@ -189,12 +220,15 @@ void verif_param(symbole *fonction, symbole *parametre){
 
     }else{
         struct _symbole *courant = parametre;
+        
         int i = 1;
             while(courant->frere != NULL) {
                 i++;            
+               
                 courant=courant->frere;
+               
             }
-             
+            
             if(i!=fonction->nb_param) {
                 erreur("nbr de parametre different lors de l'appel de cette fonction",fonction->label );
             }
@@ -215,12 +249,12 @@ void affiche_memoire_symbole(){
                         
                     }
                     else{
-                        struct _param *param_courant = courant->param_t;
+                        struct _symbole *param_courant = courant->param_t;
                     
                     while(param_courant!=NULL)
                         {
-                            printf(" Type_Arg %s |",param_courant->type_t);
-                            param_courant = param_courant->suivant_t;
+                            printf(" Type_Arg %s |",param_courant->type_symbol);
+                            param_courant = param_courant->frere;
                         }
                         printf("\n");
                     }
@@ -277,12 +311,20 @@ arbre *creer_arbre(char *label, enum type_arbre typeEnum, symbole *element, arbr
     nouvel_arbre->fils_t=fils;
     return nouvel_arbre;
 }
+void *ajouter_frere_old(arbre *actuel, arbre *frere) {
+    struct _arbre *frere_courant = actuel;
+    while(frere_courant->type_arbre_t!=MON_NULL ) { // tant qu'on trouve des freres on continue de les parcourirs
+        frere_courant = frere_courant->frere_t;
+    }
+    frere_courant = frere; // On viens de trouver un frere sans aucun frere, on lui rajoute donc son frere
+}
 
 void *ajouter_frere(arbre *actuel, arbre *frere) {
     struct _arbre *frere_courant = actuel;
     while(frere_courant->frere_t != NULL) { // tant qu'on trouve des freres on continue de les parcourirs
         frere_courant = frere_courant->frere_t;
     }
+    
     frere_courant->frere_t = frere; // On viens de trouver un frere sans aucun frere, on lui rajoute donc son frere
 }
 
@@ -308,10 +350,11 @@ un_arbre->fils_t->fils_t->frere_t->label, // 3
 
 void affiche_arbreN(arbre *un_arbre)
 {
-
     if(un_arbre->fils_t==NULL)
-    {
-        printf("    Feuille : %s \n",un_arbre->label);
+    {   
+        if(un_arbre->label == NULL){printf("true\n");}
+        printf("    Feuille : %s ,",un_arbre->label);
+        
         if(un_arbre->frere_t!=NULL)
          {
             affiche_arbre(un_arbre->frere_t);       
@@ -331,10 +374,15 @@ void affiche_arbreN(arbre *un_arbre)
 }
 void affiche_arbre(arbre *un_arbre)
 {
-
+    if(un_arbre->type_arbre_t==MON_BLOC)
+    {
+        printf("Bloc : \n");
+        affiche_memoire_symbole2(un_arbre->symbol_t);
+    }
+    
     if(un_arbre->fils_t==NULL)
     {
-        printf("    Feuille : %s ,",un_arbre->label);
+        printf("    Feuille : %s \n",un_arbre->label);
         if(un_arbre->frere_t!=NULL)
          {
             affiche_arbre(un_arbre->frere_t);       
@@ -344,6 +392,13 @@ void affiche_arbre(arbre *un_arbre)
     if(un_arbre->fils_t!=NULL)
     {
         printf("[Arbre : %s ,",un_arbre->label);
+        if(un_arbre->type_arbre_t==MON_FONCTION)
+        {
+            printf("\nArg : \n");
+            affiche_memoire_symbole2(un_arbre->symbol_t->param_t);
+            printf("FinArg\n");
+         }
+   
         affiche_arbre(un_arbre->fils_t);
         printf("]\n");
         if(un_arbre->frere_t!=NULL)
@@ -353,50 +408,63 @@ void affiche_arbre(arbre *un_arbre)
     }
 }
 
-void affiche_arbre_old(arbre *un_arbre)
-{
-    if(un_arbre->fils_t==NULL)
-    {
-        printf("   Feuille :");
-        printf(" %s \n",un_arbre->label);
-        return 0;
-    }
-    else{
-        printf("Arbre :"); // A // + 
-        printf(" %s \n",un_arbre->label);
-        struct _arbre *courant ;
-        struct _arbre *courant_frere;
-        courant=un_arbre->fils_t; 
-        printf("Courant = %s \n",courant->label);
-        int i=0;
-        while(courant!=NULL)
-        {
-            courant_frere=courant->frere_t;
-            affiche_arbre(courant); // + // Feuille 2
-            while(courant_frere!=NULL)
-            {   
-                printf("Frere %d : %s",i,courant_frere->label);
-                i++;
-                //affiche_arbre(courant_frere);
-                courant_frere=courant_frere->frere_t;
+
+
+void affiche_memoire_symbole2(symbole *le_symbole){
+    struct _symbole *courant = le_symbole;
+    while(courant != NULL){
+         if(courant->nb_param>-1)
+                {
+                    printf("Func : %s | Type %s |>",courant->label,courant->type_symbol);
+                    if( courant->param_t==NULL)
+                    {
+                        
+                    }
+                    else{
+                        struct _symbole *param_courant = courant->param_t;
+                    
+                    while(param_courant!=NULL)
+                        {
+                            printf(" Nom : %s Type_Arg %s |",param_courant->label,param_courant->type_symbol);
+                            param_courant = param_courant->frere;
+                        }
+                        printf("\n");
+                    }
+                }
+                
+                else{
+
+                
+        printf("Variable : %s | Type : %s  ",courant->label,courant->type_symbol);
+        
+        if(courant->contenu_adresse!=NULL) {
+            printf("TYPE adresse : %s ",courant->contenu_adresse->type_symbol);
+        }
+        printf("\n");
+        if(courant->contenu != NULL) {
+            printf("Contenu : %s \n",courant->label);
+            struct _symbole *contenu_courant = courant->contenu;
+            while(contenu_courant != NULL) {
+                printf("nb_param : %d\n",contenu_courant->nb_param);
+               
+               
+                {
+                    printf("  Var : %s  Type %s  ", contenu_courant->label,contenu_courant->type_symbol);
+                    if(contenu_courant->contenu_adresse!=NULL) {
+                        printf("TYPE adresse : %s  ",contenu_courant->contenu_adresse->type_symbol);
+                    }
+                    printf(" |\n");
+                }
+                contenu_courant=contenu_courant->frere;
             }
-            printf("\n");
-            courant=courant->fils_t;
-    }
-    }
+            printf("Fin contenu : %s\n",courant->label);
+         
+          }
+            
+         }
+                printf("\n");
+            courant=courant->frere;
+        } 
+        
     
-   
 }
-
-/*
-1) Dans le code FrontENd, admettons que notre structure contient un int et une struct, que devons-nous faire en backend 
-pour traduire liste->int  ?
-
-2)int (*fact) (int n);  que se passe-t-il pour le code functions.c avec un ptr vers une fonction
-qui s'affecte comme une variable ?
-
-3) Il n'y a pas de définitions extern de malloc dans pointeurs.c , est-ce voulu ?
-
-4) Accepté vous les passages de rapport avec windows + wsl ? Ou y êtes vous allergique ?
-
-*/

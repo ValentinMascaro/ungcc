@@ -33,19 +33,15 @@
 %type <arbre> logical_or_expression
 %type <arbre> unary_expression
 %type <arbre> primary_expression
-
-/*
-%type <symbole> expression
-%type <symbole> unary_expression
-%type <symbole> primary_expression
-%type <symbole> postfix_expression
-%type <symbole> multiplicative_expression
-%type <symbole> additive_expression
-%type <symbole> equality_expression
-%type <symbole> relational_expression
-%type <symbole> logical_and_expression
-%type <symbole> logical_or_expression
-*/
+%type <arbre> compound_statement
+%type <arbre> statement
+%type <arbre> selection_statement
+%type <arbre> expression_statement
+%type <arbre> iteration_statement
+%type <arbre> jump_statement
+%type <arbre> statement_list
+// %type <arbre> external_declaration
+%type <arbre> function_definition
 
 %type <justepourlesswitch> unary_operator
 %type <symbole> struct_identifier_declarator
@@ -53,15 +49,14 @@
 %type <symbole> struct_declaration
 %type <symbole> struct_specifier
 %type <symbole> parameter_list_creator
-%type <symbole> function_definition
+
 %type <symbole> parameter_declaration
 %type <symbole> parameter_list
-
 %type <symbole> declarator
 %type <symbole> direct_declarator
 %type <symbole> declaration
 %type <symbole> declaration_list
-
+%type <symbole> declaration_list_local
 
 %type <type_t> declaration_specifiers
 %type <type_t> type_specifier
@@ -129,6 +124,7 @@ postfix_expression
         } 
         | postfix_expression '(' argument_expression_list ')' 
         {
+               
                if(!(strcmp($1->symbol_t->type_symbol,"PTR")))
                 {
                       if($1->symbol_t->contenu_adresse->nb_param == -1){
@@ -136,9 +132,9 @@ postfix_expression
                         erreur(" n'est pas une fonction",$1->symbol_t->label);
                       }
                        verif_param($1->symbol_t->contenu_adresse,$3->symbol_t);
-                   
+                 
                 }
-                else {
+                else { 
                         if($1->symbol_t->nb_param == -1){
                                 erreur(" n'est pas une fonction",$1->symbol_t->label);
                         }
@@ -152,10 +148,9 @@ postfix_expression
                 snprintf(buf2,256,"%s",$1->symbol_t->type_symbol);
                 strcpy(copy,buf);
                 strcpy(copy2,buf2);
-               // ajouter_frere($1,$3);
-                $$=creer_arbre(copy,MON_APPEL,creer_symbole(copy,copy2),$3,NULL);
-               
-                
+                ajouter_frere($1,$3);
+              
+                $$=creer_arbre(copy,MON_APPEL,creer_symbole(copy,copy2),$1,NULL);
                 $$->symbol_t->nb_param=-1;
                 if(!(strcmp($$->symbol_t->type_symbol,"PTR")))
                 {             
@@ -180,8 +175,9 @@ postfix_expression
                 }
                 free(buf);
                 free(buf2);
+              
                 /////////////affiche arbre////////
-                affiche_arbre($$);
+               // affiche_arbre($$);
                
         }        
         | postfix_expression PTR_OP IDENTIFIER 
@@ -194,19 +190,37 @@ postfix_expression
                         ajouter_frere($1,creer_arbre($3,MON_VARIABLE,leMembre,NULL,NULL));
                         $$ = creer_arbre("->",MON_FLECHE,leMembre,$1,NULL);
                          //printf("TROUVER %s | %s \n",leMembre->label,leMembre->type_symbol);
+                        // affiche_arbreN($$);
                 }
         }
         ;
 
 argument_expression_list
-        : expression { $$ = $1;
+        : expression { 
+                struct _symbole *copy = (symbole*) malloc(sizeof(symbole));
+                copy->label = (malloc((strlen($1->symbol_t->label) + 1)  * sizeof(char)));
+                copy->type_symbol = (malloc((strlen($1->symbol_t->type_symbol) + 1)  * sizeof(char)));
+                
+                strncpy(copy->label, $1->symbol_t->label, strlen($1->symbol_t->label) + 1);
+                strncpy(copy->type_symbol,$1->symbol_t->type_symbol, strlen($1->symbol_t->type_symbol) + 1);
+                copy->nb_param = $1->symbol_t->nb_param;
+                copy->contenu = NULL;
+                copy->contenu_adresse = NULL;
+                copy->frere=NULL;
+               
+                $$ = creer_arbre($1->label,$1->type_arbre_t,copy,$1->fils_t,$1->frere_t);
+                
                 //$$=creer_arbre($1->symbol_t->label,MON_VARIABLE,creer_symbole($1->symbol_t->label,$1->symbol_t->type_symbol),NULL,NULL);
                 }
         | argument_expression_list ',' expression 
         {       
                 ajouter_frere($1,$3);
+             
+              
                 $1->symbol_t = ajouter_symbole($1->symbol_t,creer_symbole($3->symbol_t->label,$3->symbol_t->type_symbol));
+               
                 //$1 = ajouter_symbole($1->symbol_t,creer_arbre("AEL",MON_ARGEXL,$3->type_symbol));
+               
                 $$ = $1;
         }
         ;
@@ -252,14 +266,14 @@ multiplicative_expression
         | multiplicative_expression '*' unary_expression  
         {
                 ajouter_frere($1,$3);
-               $$=creer_arbre("*",MON_AUTRE, creer_symbole("*","INT"),$1,$3);
+               $$=creer_arbre("*",MON_AUTRE, creer_symbole("*","INT"),$1,NULL);
                  //printf("%s * %s\n",$1->type_symbol,$3->type_symbol);
                 //verif_type($1,$3);
         }
         | multiplicative_expression '/' unary_expression 
         {
                 ajouter_frere($1,$3);
-                $$=creer_arbre("/",MON_AUTRE, creer_symbole("/","INT"),$1,$3);
+                $$=creer_arbre("/",MON_AUTRE, creer_symbole("/","INT"),$1,NULL);
                  //printf("%s / %s\n",$1->type_symbol,$3->type_symbol);
                 //verif_type($1,$3);
         }
@@ -269,7 +283,7 @@ additive_expression
         : multiplicative_expression {$$=$1;}
         | additive_expression '+' multiplicative_expression
         {      
-                printf("%s + %s\n",$1->symbol_t->type_symbol,$3->symbol_t->type_symbol);
+               // printf("%s + %s\n",$1->symbol_t->type_symbol,$3->symbol_t->type_symbol);
                 if( ( ( strcmp($1->symbol_t->type_symbol, "INT") ) && (strcmp($3->symbol_t->type_symbol, "PTR") ) ) 
                 ||( ( strcmp($3->symbol_t->type_symbol, "INT") ) && (strcmp($1->symbol_t->type_symbol, "PTR") ) ) ){
                         ajouter_frere($1,$3);
@@ -291,16 +305,19 @@ additive_expression
         }
         | additive_expression '-' multiplicative_expression 
         {
-                //printf("%s - %s\n",$1->type_symbol,$3->type_symbol);
+               
+               // printf("%s - %s\n",$1->symbol_t->type_symbol,$3->symbol_t->type_symbol);
                 if( ( ( strcmp($1->symbol_t->type_symbol, "INT") ) && (strcmp($3->symbol_t->type_symbol, "PTR") ) ) 
                 ||( ( strcmp($3->symbol_t->type_symbol, "INT") ) && (strcmp($1->symbol_t->type_symbol, "PTR") ) ) ){
+                        
                         ajouter_frere($1,$3);
-                        $$=creer_arbre("-",MON_AUTRE,creer_symbole("INT_PTR","PTR"),$1,$3);
+                        $$=creer_arbre("-",MON_AUTRE,creer_symbole("INT_PTR","PTR"),$1,NULL);
                                         
                 }
-                if  ( !( strcmp($1->symbol_t->type_symbol, "PTR") ) && !(strcmp($3->symbol_t->type_symbol, "PTR") ) ) {
+                if  ( !( strcmp($1->symbol_t->type_symbol, "INT") ) && !(strcmp($3->symbol_t->type_symbol, "INT") ) ) {
+                         
                         ajouter_frere($1,$3);
-                        $$=creer_arbre("-",MON_AUTRE,creer_symbole("PTR_PTR","INT"),$1,$3);
+                        $$=creer_arbre("-",MON_AUTRE,creer_symbole("PTR_PTR","INT"),$1,NULL);
                 }
                                                                 
         }
@@ -363,43 +380,37 @@ expression
         : logical_or_expression        {$$ = $1;}         
         | unary_expression '=' expression
         {//verif_type_affectation($1,$3);
-                //printf("%s = %s\n",$1->type_symbol,$3->type_symbol);
+             //   printf("%s = %s\n",$1->symbol_t->type_symbol,$3->symbol_t->type_symbol);
                 if($1->symbol_t->var_or_func==1)
                 {
                         erreur("affectation vers une fonction impossible",$1->label);
                 }
+              
+                
                 ajouter_frere($1,$3);
+              
                 $$ = creer_arbre("=",MON_AFFECT,creer_symbole("affect",$1->symbol_t->type_symbol),$1,NULL);
                 // $$ = creer_arbre("=",MON_AFFECT,creer_symbole("affect",$1->type_symbol),NULL,NULL);
+               
+              
+              
         }
         ;
 
 declaration
         : declaration_specifiers declarator ';' 
         {
-                
                 if(!strcmp($1,"VOID") && flag == 0)
                 {
-                       // printf("FLAG : %d\n",flag);
                         erreur(" type void sur declaration de variable",$2->label);
-                }
-                
+                }  
                 verif_redefinition($2->label,TABLE[ACC]);
-                
                 if($2->contenu_adresse==NULL){
-                      // printf("%s type = %s\n",$2->label,$1);
                         $2->type_symbol=$1;
-                      
-                }else{
-                       
-                        $2->contenu_adresse->type_symbol=$1;
-                        
+                }else{   
+                        $2->contenu_adresse->type_symbol=$1;       
                 }
-                $$=$2; flag = 0;
-                
-               
-               
-               // TABLE[ACC]=ajouter_symbole(TABLE[ACC],$2);
+                $$=$2; flag = 0; 
                                                 
         } 
         | struct_specifier ';'  {}
@@ -458,7 +469,7 @@ struct_declaration_list
         : struct_declaration {$$=$1;}
         | struct_declaration_list struct_declaration
         { 
-                verif_redefinition($2->label,$1);
+                verif_redefinition($2->label,$1);        
                 $1=ajouter_symbole($1,$2);
                 $$=$1;
         }
@@ -513,7 +524,12 @@ direct_declarator
         : IDENTIFIER       { $$=creer_symbole($1,NULL);
                                 }   
         
-         | IDENTIFIER '(' parameter_list_creator ')' { $$=creer_symbole_fonction($1,NULL,$3);
+         | IDENTIFIER '(' parameter_list_creator ')' { 
+                
+               
+                 $$=creer_symbole_fonction($1,NULL,$3);
+                
+        
                                                        // printf("Nom fonction : %s, Nb_param : %d \n",$1,$$->nb_param);
                                                       if(flag == 0)
                                                       {
@@ -541,16 +557,18 @@ direct_declarator
 parameter_list_creator
         : parameter_list        
         {  
-                nouvelle_adresse(); 
+                nouvelle_adresse();
                 
                 TABLE[ACC]=ajouter_symbole(TABLE[ACC],$1);
-               // affiche_memoire_symbole();
+               
                 $$=$1;
+              
         }
         | 
         {
                 nouvelle_adresse(); 
-                $$=NULL;
+                $$=creer_arbre("noarg",MON_FONCTION,NULL,NULL,NULL);
+               // $$=NULL;
         }
 
 parameter_list
@@ -558,7 +576,9 @@ parameter_list
         | parameter_list ',' parameter_declaration 
         {
                 verif_redefinition($3->label,$1);
+              
                 $1=ajouter_symbole($1,$3);
+              
                 $$=$1;
         }
         ;
@@ -569,65 +589,123 @@ parameter_declaration
                 
                 //verif_redefinition($2->label,TABLE[ACC]);
                 if($2->contenu_adresse==NULL){
+                         
                         $2->type_symbol=$1;
                       
                 }else{
-                       
+                      
                         $2->contenu_adresse->type_symbol=$1;
                 }
+               
                 $$=$2;
+                
                                               
         } 
         | struct_specifier ';'  {}
         ;
 
 statement
-        : compound_statement 
-        | expression_statement
-        | selection_statement
-        | iteration_statement
-        | jump_statement 
+        : compound_statement {$$=$1;}
+        | expression_statement {$$=$1;}
+        | selection_statement {$$=$1;}
+        | iteration_statement {$$=$1;}
+        | jump_statement {$$=$1;}
         ;
 
 compound_statement
-        : '{'  '}'   {      }
-        | '{' statement_list '}'
-        | '{' declaration_list_local '}' {  liberer_tables();}
-        | '{' declaration_list_local statement_list  '}' { liberer_tables();}   
+        : '{'  '}'   { $$ = creer_arbre("corps",MON_BLOC,NULL,NULL,NULL);     }
+        | '{' statement_list '}' {$$ = creer_arbre("corps",MON_BLOC,NULL,$2,NULL); }
+        | '{' declaration_list_local '}' {  
+                struct _symbole *Copy_table = TABLE[ACC];
+               // Copy_table = 
+                $$=creer_arbre("corps",MON_BLOC,Copy_table,NULL,NULL); 
+                //free(TABLE[ACC]);
+                liberer_tables();
+                }
+        | '{' declaration_list_local statement_list  '}' { 
+                struct _symbole *Copy_table = TABLE[ACC];
+               // Copy_table = 
+                $$=creer_arbre("corps",MON_BLOC,Copy_table,$3,NULL); 
+                //free(TABLE[ACC]);
+                liberer_tables();
+               
+                }   
         ;       
 declaration_list_local 
-        : {nouvelle_adresse();}
-        | declaration_list  {nouvelle_adresse();TABLE[ACC]=ajouter_symbole(TABLE[ACC],$1);
+        : {nouvelle_adresse(); $$ = NULL;}
+        | declaration_list  {nouvelle_adresse();
+        TABLE[ACC]=ajouter_symbole(TABLE[ACC],$1); $$ = $1;
         }
+        
+        
         ;
 declaration_list
         : declaration {$$=$1;}
-        | declaration_list declaration {$1=ajouter_symbole($1,$2);}
+        | declaration_list declaration {
+                $1=ajouter_symbole($1,$2);}
         ;
 
 statement_list 
-        : statement
-        | statement_list statement
+        : statement {$$ = $1; }
+        | statement_list statement {ajouter_frere($1,$2);
+                                $$=$1;}
         ;
 
 expression_statement
-        : ';'
-        | expression ';'
+        : ';' {$$ = creer_arbre("expr;",MON_AUTRE,NULL,NULL,NULL);}
+        | expression ';' { $$=$1;}
         ;
 
 selection_statement
-        : IF '(' expression ')' statement
-        | IF '(' expression ')' statement ELSE statement
+        : IF '(' expression ')' statement { ajouter_frere($3,$5);
+                $$=creer_arbre("IF",MON_IF,NULL,$3,NULL);
+                }
+        | IF '(' expression ')' statement ELSE statement {ajouter_frere($3,$5);
+                                                        ajouter_frere($3,$7);
+                                                        $$=creer_arbre("IF",MON_IF,NULL,$3,NULL);}
         ;
 
 iteration_statement
-        : WHILE '(' expression ')' statement
+        : WHILE '(' expression ')' statement {ajouter_frere($3,$5);
+                                                $$=creer_arbre("WHILE",MON_ITERATION,NULL,$3,NULL);
+                                                /*while(1){i=2};
+                                                [Arbre : While , Feuille 1 , ( Arbre : = , Feuille i , Feuille 2]  ]
+                                                 goto Ltest1;
+                                                 LBody1 : 
+                                                        i = 2;
+                                                Ltest1 :
+                                                        if(1) goto LBody1; 
+                       for(i=0;i<10;i++)
+
+                       i=0
+                       while(i<10)
+                       { i++ }
+                       
+                                                        */}
         | FOR '(' expression_statement expression_statement expression ')' statement
+        {       ajouter_frere($4,$5);
+                ajouter_frere($4,$7);
+                struct _arbre *bouclepour = creer_arbre("FOR",MON_ITERATION,NULL,$4,NULL);
+                ajouter_frere($3,bouclepour);
+                $$ = $3;
+                /* for(i=0;i<10;i=i+1)
+                [Arbre : "=", i , 0]
+                [Arbre : "FOR", [Arbre : < , i , 10] [ArbreA : = , i , [Arbre : + , i , 1]]]
+                i = 0;
+                goto Ltest1;
+                LBody1 : 
+                        i = i + 1;
+                        corps :
+                Ltest1 :
+                        if( i < 10) goto LBody1
+                
+                */
+        }
         ;
 
 jump_statement
-        : RETURN ';'
-        | RETURN expression ';'
+        : RETURN ';' {$$ = creer_arbre("return",MON_RETURN,NULL,NULL,NULL);}
+        | RETURN expression ';' {$$ = creer_arbre("return",MON_RETURN,NULL,$2,NULL);}
         ;
 
 program
@@ -636,22 +714,52 @@ program
         ;
 
 external_declaration
-        : function_definition {TABLE[ACC]=ajouter_symbole(TABLE[ACC],$1);}
+        : function_definition {
+                 
+                if(Program->fils_t->type_arbre_t == MON_NULL){
+                       
+                        Program->fils_t = $1;
+                         
+                }
+                else{
+                       
+                        ajouter_frere(Program->fils_t,$1);
+                      
+                        }
+                       
+                         
+                 TABLE[ACC]=ajouter_symbole(TABLE[ACC],$1->symbol_t);
+                }
         | declaration {
                 if(strcmp($1->type_symbol,"STRUCT"))
                 {
-                       TABLE[ACC]=ajouter_symbole(TABLE[ACC],$1);}
+                     
+                       TABLE[ACC]=ajouter_symbole(TABLE[ACC],$1);
+                        
+                           if(Program->fils_t->type_arbre_t == MON_NULL){
+                       
+                        Program->fils_t = creer_arbre($1->label,MON_VARIABLE,$1,NULL,NULL);
+                         
                 }
+                else{
+                        ajouter_frere(Program->fils_t,creer_arbre($1->label,MON_VARIABLE,$1,NULL,NULL));
+                }
+                       
+
+                       Program->symbol_t = TABLE[ACC];
+
+                       }
+                        
+                }
+
                 
-        ;
+        ;       
 
 function_definition
         : declaration_specifiers declarator compound_statement
         {
-              //  printf("DEBUT Nom : %s Type : %s nb_param : %d Contenu_adresse_nom : %s Contenu_adresse_type : %s Contenu_nb_param : %d\n",$2->label,$2->type_symbol,$2->nb_param,$2->contenu_adresse->label,$2->contenu_adresse->type_symbol,$2->contenu_adresse->nb_param);
                 if($2->type_symbol == NULL){
                         $2->type_symbol=$1;
-                        // $$=$2;
                 }else{
                         $2->contenu_adresse->type_symbol = $1;
                 }
@@ -666,25 +774,14 @@ function_definition
                 {
                         erreur(" attribut attendu",$2->label);
                 }
-                /*
-                if($2->type_symbol == NULL){
-                        $2->type_symbol=$1;
-                        // $$=$2;
-                }else{
-                        $2->contenu_adresse->type_symbol = $1;
-                }
-                */
-                $$=$2;
-
+               // $$=$2;
                 verif_redefinition($2,TABLE[ACC]);
-               // printf("Fin fonction %s \n",$2->label);
-                //printf("Nom : %s Type : %s nb_param : %d Contenu_adresse_nom : %s Contenu_adresse_type : %s Contenu_nb_param : %d\n",$$->label,$$->type_symbol,$$->nb_param,$$->contenu_adresse->label,$$->contenu_adresse->type_symbol,$$->contenu_adresse->nb_param);
-               // affiche_memoire_symbole();
+               
+               
+                $$=creer_arbre($2->label,MON_FONCTION,$2,$3,NULL);
+                
                 liberer_tables();
-                $$=$2;
-                //TABLE[ACC]=ajouter_symbole(TABLE[ACC],$2);
-                
-                
+              
         }
         ;
 
@@ -699,9 +796,13 @@ int main(void){
         flex lexFrontEnd.l
         yacc yaccFrontEnd.y -d
         gcc lex.yy.c y.tab.c structure.c -o testYacc */
+     
+        init();
+       
         yyparse();
-        printf("FIN\n");
-        affiche_memoire_symbole();
+        printf("--FIN--\n");
+        //affiche_memoire_symbole();
+        affiche_arbre(Program);
    
         return 0;
 }
