@@ -15,6 +15,9 @@ Resume : Gere la table de donnee en vue de la verification semantique.
 int ACC;
 int adresseACC;
 int flag; // permet de savoir si l'on déclare un extern ou une fonction.
+int acc_new_temp;
+int acc_temp_declaration;
+int acc_temp_instruction;
 enum type_arbre{
 	MON_FONCTION, 
 	MON_ITERATION,  // for / while  
@@ -28,6 +31,7 @@ enum type_arbre{
 	MON_FLECHE,
 	MON_CONSTANT,
 	MON_NULL,
+	MON_OPERATION,
 	MON_AUTRE  // Gerer plus tard 
 };
 
@@ -77,4 +81,12 @@ void affiche_memoire_symbole();
 arbre *creer_arbre(char *label, enum type_arbre type, symbole *element, arbre *fils, arbre *frere);
 void *ajouter_frere(arbre *actuel, arbre *frere);
 void affiche_arbre(arbre *un_arbre);
+
+void new_temp( char *str,size_t len);
+void clean_file();
+void parcoursVariable();
+void parcoursProgramme(arbre *arbre,FILE *fd_c);
+void parscoursFonction(arbre *arbre,FILE *fd_c);
+void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c);
+void parcoursArbreInstruction(arbre *arbre, FILE *fd_c);
 #endif
