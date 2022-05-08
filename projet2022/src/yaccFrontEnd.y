@@ -269,7 +269,7 @@ additive_expression
                 if( ( ( strcmp($1->symbol_t->type_symbol, "INT") ) && (strcmp($3->symbol_t->type_symbol, "PTR") ) ) 
                 ||( ( strcmp($3->symbol_t->type_symbol, "INT") ) && (strcmp($1->symbol_t->type_symbol, "PTR") ) ) ){
                         ajouter_frere($1,$3);
-                        $$=creer_arbre("+-*",MON_OPERATION,creer_symbole("INT_PTR","PTR"),$1,NULL);     
+                        $$=creer_arbre("+",MON_OPERATION,creer_symbole("INT_PTR","PTR"),$1,NULL);     
                 }
                 if ( !( strcmp($1->symbol_t->type_symbol, "INT") ) && !(strcmp($3->symbol_t->type_symbol, "INT") ) ){
                         ajouter_frere($1,$3);
@@ -288,7 +288,7 @@ additive_expression
                 ||( ( strcmp($3->symbol_t->type_symbol, "INT") ) && (strcmp($1->symbol_t->type_symbol, "PTR") ) ) ){
                         
                         ajouter_frere($1,$3);
-                        $$=creer_arbre("+-*",MON_OPERATION,creer_symbole("INT_PTR","PTR"),$1,NULL);
+                        $$=creer_arbre("-",MON_OPERATION,creer_symbole("INT_PTR","PTR"),$1,NULL);
                                         
                 }
                 if  ( !( strcmp($1->symbol_t->type_symbol, "INT") ) && !(strcmp($3->symbol_t->type_symbol, "INT") ) ) {
@@ -321,13 +321,13 @@ relational_expression
         | relational_expression LE_OP additive_expression
         {
                 ajouter_frere($1,$3);
-                $$=creer_arbre("LE_OP",MON_OPERATION,creer_symbole("x_<=_y","INT"),$1,NULL);
+                $$=creer_arbre("<=",MON_OPERATION,creer_symbole("x_<=_y","INT"),$1,NULL);
         // printf("%s <= %s\n",$1->type_symbol,$3->type_symbol);
         }
         | relational_expression GE_OP additive_expression
         {
                 ajouter_frere($1,$3);
-                $$=creer_arbre("GE_OP",MON_OPERATION,creer_symbole("x_>=_y","INT"),$1,NULL);
+                $$=creer_arbre(">=",MON_OPERATION,creer_symbole("x_>=_y","INT"),$1,NULL);
         // printf("%s >= %s\n",$1->type_symbol,$3->type_symbol);
          }
         ;
@@ -337,13 +337,13 @@ equality_expression
         | equality_expression EQ_OP relational_expression 
         {
                 ajouter_frere($1,$3);
-                $$=creer_arbre("EQ_OP",MON_OPERATION,creer_symbole("x_==_Ey","INT"),$1,NULL);
+                $$=creer_arbre("==",MON_OPERATION,creer_symbole("x_==_Ey","INT"),$1,NULL);
         // printf("%s == %s\n",$1->type_symbol,$3->type_symbol);
         }
         | equality_expression NE_OP relational_expression  
         {
                 ajouter_frere($1,$3);
-                $$=creer_arbre("NE_OP",MON_OPERATION,creer_symbole("x_!=_Ey","INT"),$1,NULL);
+                $$=creer_arbre("!=",MON_OPERATION,creer_symbole("x_!=_Ey","INT"),$1,NULL);
          //printf("%s != %s\n",$1->type_symbol,$3->type_symbol);
         }
         ;
@@ -353,7 +353,7 @@ logical_and_expression
         | logical_and_expression AND_OP equality_expression  
         {
                 ajouter_frere($1,$3);
-                $$=creer_arbre("AND_OP",MON_OPERATION,creer_symbole("x_&&_Ey","INT"),$1,NULL);
+                $$=creer_arbre("&&",MON_OPERATION,creer_symbole("x_&&_Ey","INT"),$1,NULL);
         // printf("%s && %s\n",$1->type_symbol,$3->type_symbol);
         }
         ;
@@ -363,7 +363,7 @@ logical_or_expression
         | logical_or_expression OR_OP logical_and_expression  
         {
                 ajouter_frere($1,$3);
-                $$=creer_arbre("OR_OP",MON_OPERATION,creer_symbole("x_||_Ey","INT"),$1,NULL);
+                $$=creer_arbre("||",MON_OPERATION,creer_symbole("x_||_Ey","INT"),$1,NULL);
          //printf("%s || %s\n",$1->type_symbol,$3->type_symbol);
         }
         ;

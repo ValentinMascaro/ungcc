@@ -1,7 +1,7 @@
 #include "structure.h"
 
 int ACC = 0;
-int adresseACC = 1;
+
 extern int yylineno;
 int flag = 0;
 int acc_new_temp = 1;
@@ -20,10 +20,10 @@ symbole *creer_symbole(char* label_t, char* type_t){
     nouveau_symbole->nb_param=-1;
     nouveau_symbole->contenu = NULL;
     nouveau_symbole->contenu_adresse = NULL;
-    nouveau_symbole->adresse=adresseACC;
+    nouveau_symbole->size=sizeof(int);
+    nouveau_symbole->adresse=0;
     nouveau_symbole->frere = NULL;
     nouveau_symbole->var_or_func=0;
-    adresseACC++;
     return nouveau_symbole;
 }
 
@@ -198,13 +198,17 @@ void erreur(char *description, char *terme_concerne) {
 
 symbole *find_membre(symbole *une_Struct,char *membre_rechercher){
     struct _symbole *courant = une_Struct;
+    int incr = 0;
     if(courant->contenu != NULL) {              
         struct _symbole *contenu_courant = courant->contenu;
         while(contenu_courant != NULL) {
             if(!strcmp(membre_rechercher,contenu_courant->label)){
+                contenu_courant->adresse=incr;
                 return contenu_courant;
             }                  
             contenu_courant=contenu_courant->frere;
+            incr = incr + sizeof(int); // TODOMARQUEUR
+
         }
     }
     erreur("Le symbole de cette structure n'existe pas",membre_rechercher);
@@ -409,7 +413,7 @@ void affiche_memoire_symbole2(symbole *le_symbole){
 
 void clean_file(){
     if (remove("_tmp_file.c") == 0){
-        printf("C'est remove\n");
+        printf("\n");
     }else{   
        printf("Impossible de supprimer le fichier\n");   
     }
@@ -525,13 +529,12 @@ void parcoursFonction(arbre *arbre, FILE *fd_c){
     // a + a + a + a  [ Arbre :  a , [Arbre]]
     
     struct _arbre *arbre_corps = arbre->fils_t;
-    if(arbre_corps->fils_t!=NULL)
-    {
+    if(arbre_corps->fils_t!=NULL)    {
         struct _arbre *arbre_instruction =arbre_corps->fils_t;
        // struct _arbre *arbre_instruction_courant =arbre_corps->fils_t;
 
-        parcoursArbreDeclaration(arbre_instruction,fd_c);
-       // parcoursArbreInstruction(arbre_instruction,fd_c);
+        parcoursArbreDeclaration(arbre_corps->fils_t,fd_c);
+        parcoursArbreInstruction(arbre_corps->fils_t,fd_c);
     }
     
 
@@ -543,49 +546,265 @@ void parcoursFonction(arbre *arbre, FILE *fd_c){
 
     fprintf(fd_c,"}\n");
 }
+/*TODO
+Terminer expression si frere = op mais pas fils 1 DONE
+->  DONE
+appel de fonction DONE
+if
+while
+for
+fonctionnel chiant
+debugguage : recursivité des fonctions
+            fin des déclaration inter bloc
 
-void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c)
-{
-     if(arbre->type_arbre_t==MON_OPERATION)
-    {
-        if(arbre->fils_t->type_arbre_t==MON_OPERATION) // ( 1 + ( 2 + ( 3 + 4) ))
-        {                                            // (+ ( + ( + 1 2) 3) 4 )
-                                            // (4 + (3 + ( 1 + 2 ) ) )
-            struct _arbre *courant = arbre->fils_t;
-            parcoursArbreDeclaration(courant,fd_c); // -- 
-             if(!strcmp(courant->label,"+-*") ){
-                fprintf(fd_c,"void _var%d;\n",acc_temp_declaration);
-             }
-             else{
-                 fprintf(fd_c,"int _var%d;\n",acc_temp_declaration);
-             }
-            acc_temp_declaration++;
-        }
-        else
-        {
+
+*/
+void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers si premier fils pas op
+     if(arbre->type_arbre_t==MON_OPERATION)    {
+         
+        if(arbre->fils_t->type_arbre_t==MON_OPERATION || arbre->fils_t->frere_t->type_arbre_t == MON_OPERATION) {// ( 1 + ( 2 + ( 3 + 4) )) -> faux
+                                         // (+ ( + ( + 1 2) 3) 4 )
+                                            // (4 + (3 + ( 1 + 2 ) ) ) -> vrai
+            parcoursArbreDeclaration(arbre->fils_t,fd_c);
             parcoursArbreDeclaration(arbre->fils_t->frere_t,fd_c);
+            if(arbre->fils_t->type_arbre_t==MON_OPERATION && arbre->fils_t->frere_t->type_arbre_t==MON_OPERATION)
+            {
+                fprintf(fd_c,"\tint _var%d;\n",acc_temp_declaration);
+                fprintf(fd_c,"\tint _var%d;\n",acc_temp_declaration+1);
+                arbre->var_code=malloc(4096);
+                arbre->code=malloc(4096);
+                char* new_var = malloc(50);
+                char* new_var2 = malloc(50);
+                snprintf(new_var,50,"_var%d",acc_temp_declaration);
+                snprintf(new_var2,50,"_var%d",acc_temp_declaration+1);
+                snprintf(arbre->code,2048,"%s%s\t%s = %s;\n\t%s = %s;\n",//snprintf(arbre->code,2048,"A %s B %s C \tD %s E = F %s G ;\n",
+                arbre->fils_t->code,
+                arbre->fils_t->frere_t->code,
+                new_var,
+                arbre->fils_t->var_code,
+                new_var2,
+                arbre->fils_t->frere_t->var_code);
+                snprintf(arbre->var_code,2048," %s %s %s",//snprintf(arbre->var_code,2048,"H %s I %s J %s",
+                new_var
+                ,arbre->label
+                ,new_var2);
+                acc_temp_declaration++;
+                acc_temp_declaration++;
+            }
+            else {
+            struct _arbre *courant1;
+            struct _arbre *courant2;
+            int sens;
+                if(arbre->fils_t->type_arbre_t == MON_OPERATION)
+                {
+                courant1 = arbre->fils_t;
+                courant2 = arbre->fils_t->frere_t;
+                 sens = 0;
+                }else if(arbre->fils_t->frere_t->type_arbre_t==MON_OPERATION)
+                {
+                    courant1 = arbre->fils_t->frere_t;
+                    courant2 = arbre->fils_t;
+                     sens = 1;
+                }
+                    // Choix de tjrs mettre INT \\  
+                   // if(!strcmp(courant1->label,"+-*") ){
+                     //   fprintf(fd_c,"\tvoid _var%d;\n",acc_temp_declaration);
+                   // }else{
+                        fprintf(fd_c,"\tint _var%d;\n",acc_temp_declaration);
+                    //}
+                        arbre->var_code=malloc(256);
+                        arbre->code=malloc(256); // arbre->fils_t-> var_code = 1+2  code = 1+2  OBJECTIF = code -> var1 = 1+2 \n ;
+                        char* new_var=malloc(50);
+                        snprintf(new_var,50,"_var%d",acc_temp_declaration);
+                        snprintf(arbre->code,1024,"%s%s\t%s = %s;\n",courant1->code,
+                        courant2->code,
+                        new_var,
+                        courant1->var_code); 
+                    // printf("coucou : %s\n",arbre->fils_t->var_code);
+                    if(sens){
+                        snprintf(arbre->var_code,256,"%s %s %s",courant2->var_code,arbre->label,new_var);
+                    }else{
+                        snprintf(arbre->var_code,256,"%s %s %s",new_var,arbre->label,courant2->var_code);
+                    }
+                        
+                    // snprintf(arbre->code,2048,"%s%s+ %s",arbre->fils_t->code,arbre->fils_t->var_code,arbre->fils_t->frere_t->var_code);
+                    acc_temp_declaration++;
+            }
+        }else {
+            parcoursArbreDeclaration(arbre->fils_t,fd_c); // generation var_code du fils de l'operation
+            parcoursArbreDeclaration(arbre->fils_t->frere_t,fd_c); 
+            /* var ou pas */ 
+            arbre->var_code=malloc(256);
+            arbre->code=malloc(256);
+            snprintf(arbre->code,512,"%s%s",arbre->fils_t->code,arbre->fils_t->frere_t->code);
+            snprintf(arbre->var_code,512,"%s %s %s",arbre->fils_t->var_code,
+            arbre->label,
+            arbre->fils_t->frere_t->var_code);
+            //snprintf(arbre->code,512,"%s %s %s",arbre->fils_t->var_code,arbre->label,arbre->fils_t->frere_t->var_code);
+          //  parcoursArbreDeclaration(arbre->fils_t->frere_t,fd_c); // same pour frere
+            
+           
+        }
+
+    }
+    else if(arbre->type_arbre_t==MON_AFFECT)
+    {
+        parcoursArbreDeclaration(arbre->fils_t,fd_c);
+        arbre->var_code=malloc(256);
+        arbre->code=malloc(256);
+        snprintf(arbre->code,2048,"%s\t%s = %s;\n",arbre->fils_t->frere_t->code,arbre->fils_t->var_code,arbre->fils_t->frere_t->var_code);
+        snprintf(arbre->var_code,256,"%s",arbre->fils_t->var_code);
+        if(arbre->frere_t!=NULL){
+       
+            parcoursArbreDeclaration(arbre->frere_t,fd_c);
         }
     }
    else if(arbre->type_arbre_t==MON_FLECHE){ // ( -> ( -> a6 c) c ) 
         parcoursArbreDeclaration(arbre->fils_t,fd_c);
-        fprintf(fd_c,"void *_var%d;\n",acc_temp_declaration);
+        arbre->var_code=malloc(256);
+        arbre->code=malloc(256);
+        char* new_var=malloc(50);
+        snprintf(new_var,50,"_var%d",acc_temp_declaration);
+        fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
+        snprintf(arbre->var_code,256,"%s",new_var);
+        snprintf(arbre->code,256,"%s\t%s = %s + %d;\n",arbre->fils_t->code,new_var,arbre->fils_t->var_code,arbre->symbol_t->adresse);
         acc_temp_declaration++;
-   }
-   else
-    {
-        if(arbre->fils_t==NULL)
+        
+   }else if(arbre->type_arbre_t==MON_APPEL)
+   {
+        arbre->var_code=malloc(256);
+        arbre->code=malloc(256);
+        if(arbre->fils_t->frere_t==NULL)
         {
-            if(arbre->frere_t!=NULL)
+            snprintf(arbre->var_code,256,"%s()",arbre->label);
+        }
+        else{
+            snprintf(arbre->var_code,50,"%s(",arbre->label);
+            struct _arbre *courant=arbre->fils_t->frere_t;
+                
+            parcoursArbreDeclaration(courant,fd_c);
+            if(courant->type_arbre_t==MON_VARIABLE || courant->type_arbre_t==MON_CONSTANT )
             {
+                char *new_temp=malloc(50);
+                char *new_code=malloc(256);
+                snprintf(new_temp,50,"%s",courant->label);
+                //fprintf(fd_c,"\tint %s;\n",new_temp);
+                snprintf(new_code,256,"%s",courant->code);
+                char* copy = malloc(256);
+                char* copy2 = malloc(50);
+                snprintf(copy2,50,"%s",new_temp);
+                snprintf(copy,256,"%s",new_code);
+                strcat(arbre->code,copy);
+                strcat(arbre->var_code,copy2);
+                free(new_code);
+                free(new_temp);
+                courant=courant->frere_t;
+               // acc_temp_declaration++;
+            }
+            else{
+                char *new_temp=malloc(50);
+                char *new_code=malloc(256);
+                snprintf(new_temp,50,"_var%d",acc_temp_declaration);
+                fprintf(fd_c,"\tint %s;\n",new_temp);
+                snprintf(new_code,256,"%s\t%s = %s;\n",courant->code,new_temp,courant->var_code);
+                char* copy = malloc(256);
+                char* copy2 = malloc(50);
+                snprintf(copy2,50,"%s",new_temp);
+                snprintf(copy,256,"%s",new_code);
+                strcat(arbre->code,copy);
+                strcat(arbre->var_code,copy2);
+               // free(new_code);
+                //free(new_temp);
+                courant=courant->frere_t;
+                acc_temp_declaration++;
+            }
+            while(courant!=NULL)
+            {
+                parcoursArbreDeclaration(courant,fd_c);
+                if(courant->type_arbre_t==MON_VARIABLE || courant->type_arbre_t==MON_CONSTANT )
+                 {
+                    char *new_temp=malloc(50);
+                    char *new_code=malloc(256);
+                    snprintf(new_temp,50,"%s",courant->label);
+                    //fprintf(fd_c,"\tint %s;\n",new_temp);
+                    snprintf(new_code,256,"%s",courant->code);
+                    char* copy = malloc(256);
+                    char* copy2 = malloc(50);
+                    snprintf(copy2,50,", %s",new_temp);
+                    snprintf(copy,256,"%s",new_code);
+                    strcat(arbre->code,copy);
+                    strcat(arbre->var_code,copy2);
+                    free(new_code);
+                    free(new_temp);
+                    courant=courant->frere_t;
+                 }else{
+                    char *new_temp=malloc(50);
+                    char *new_code=malloc(256);
+                    snprintf(new_temp,50,"_var%d",acc_temp_declaration);
+                    fprintf(fd_c,"\tint %s;\n",new_temp);
+                    snprintf(new_code,256,"%s\t%s = %s;\n",courant->code,new_temp,courant->var_code);
+                    char* copy = malloc(256);
+                    char* copy2 = malloc(50);
+                    snprintf(copy2,50,", %s",new_temp);
+                    snprintf(copy,256,"%s",new_code);
+                    strcat(arbre->code,copy);
+                    strcat(arbre->var_code,copy2);
+                   // free(new_code);
+                    //free(new_temp);
+                    courant=courant->frere_t;
+                    acc_temp_declaration++;
+                 }
+            }
+            strcat(arbre->var_code,")");
+        }
+   }
+   
+   else {
+        arbre->var_code=malloc(256);
+        arbre->code=malloc(256);
+        snprintf(arbre->var_code,256,"%s",arbre->label);
+        if(arbre->fils_t==NULL)   {
+            if(arbre->frere_t!=NULL)  {
+                parcoursArbreDeclaration(arbre->frere_t,fd_c);  
+            }
+        }else if(arbre->fils_t!=NULL) {
+            parcoursArbreDeclaration(arbre->fils_t,fd_c);
+            if(arbre->frere_t!=NULL) {
                 parcoursArbreDeclaration(arbre->frere_t,fd_c);
             }
         }
-        else if(arbre->fils_t!=NULL)
-        {
-            parcoursArbreDeclaration(arbre->fils_t,fd_c);
-            if(arbre->frere_t!=NULL)
-            {
-                parcoursArbreDeclaration(arbre->frere_t,fd_c);
+        // a = 1 + ( 2 + ( 3 + 4 ) ) 
+        // a = 1 + 2;
+    }
+}
+
+void parcoursArbreInstruction(arbre *arbre, FILE *fd_c){
+     
+    
+    if(arbre->type_arbre_t==MON_AFFECT)
+    {
+        
+        fprintf(fd_c,"%s",arbre->code);
+       if(arbre->frere_t!=NULL){
+        
+            parcoursArbreInstruction(arbre->frere_t,fd_c);
+        }
+
+    }
+   else if(arbre->type_arbre_t==MON_FLECHE){ // ( -> ( -> a6 c) c ) 
+        parcoursArbreInstruction(arbre->fils_t,fd_c);
+       // fprintf(fd_c,"void *_var%d;\n",acc_temp_declaration);
+        //acc_temp_declaration++;
+   }
+   else  {
+        if(arbre->fils_t==NULL)   {
+            if(arbre->frere_t!=NULL)  {
+                parcoursArbreInstruction(arbre->frere_t,fd_c);
+            }
+        }else if(arbre->fils_t!=NULL) {
+            parcoursArbreInstruction(arbre->fils_t,fd_c);
+            if(arbre->frere_t!=NULL) {
+                parcoursArbreInstruction(arbre->frere_t,fd_c);
             }
         }
 
@@ -594,145 +813,10 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c)
     }
 }
 
-void parcoursArbreDeclaration_old(arbre *arbre, FILE *fd_c){  
-    if(arbre->fils_t==NULL)
-    {
-        if(arbre->type_arbre_t==MON_FLECHE){
-            fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
-            acc_temp_declaration++;
-        }
-        if(arbre->type_arbre_t==MON_OPERATION && arbre->frere_t->type_arbre_t==MON_OPERATION){
-            if(!strcmp(arbre->frere_t->label,"+-*") ){
-            
-                fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
-                acc_temp_declaration++;
-            }else{
-                fprintf(fd_c,"\tint _var%d;\n",acc_temp_declaration);
-                acc_temp_declaration++;
-            }
-        }
-        if(arbre->frere_t!=NULL) {
-            parcoursArbreDeclaration(arbre->frere_t,fd_c);       
-        }    
-    }else 
-    if(arbre->fils_t!=NULL)
-    {
-        if(arbre->type_arbre_t==MON_FLECHE){
-            fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
-            acc_temp_declaration++;
-        }
-        if(arbre->fils_t->type_arbre_t==MON_OPERATION && arbre->fils_t->frere_t->type_arbre_t==MON_OPERATION)
-        {
-            if(!strcmp(arbre->fils_t->frere_t->label,"+-*") )  {
-                fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
-                acc_temp_declaration++;
-                if(!strcmp(arbre->fils_t->label,"+-*")) {
-                    fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
-                    acc_temp_declaration++;
-                }
-                else{
-                    fprintf(fd_c,"\tint _var%d;\n",acc_temp_declaration);
-                    acc_temp_declaration++;
-                }
-            }else{
-                fprintf(fd_c,"\t int _var%d;\n",acc_temp_declaration);
-                acc_temp_declaration++;
-                if(!strcmp(arbre->fils_t->label,"+-*")){
-                    fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
-                    acc_temp_declaration++;
-                }else{
-                    fprintf(fd_c,"\tint _var%d;\n",acc_temp_declaration);
-                    acc_temp_declaration++;
-                }
-            }
-        }else if(arbre->type_arbre_t==MON_OPERATION && ( arbre->fils_t->type_arbre_t==MON_OPERATION || arbre->fils_t->frere_t->type_arbre_t==MON_OPERATION)){   
-                 if(!strcmp(arbre->fils_t->label,"+-*")){
-                    fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
-                    acc_temp_declaration++;
-                }else{
-                    fprintf(fd_c,"\tint _var%d;\n",acc_temp_declaration);
-                    acc_temp_declaration++;
-                }
-            }
-            parcoursArbreDeclaration(arbre->fils_t,fd_c);   
-            if(arbre->frere_t!=NULL) {
-                parcoursArbreDeclaration(arbre->frere_t,fd_c);       
-            }
-    }
-}
-/*
-void parcoursArbreInstruction(arbre *arbre, FILE *fd_c){  
-    if(arbre->fils_t==NULL)
-    {
-        if(arbre->type_arbre_t==MON_FLECHE){
-          
-            acc_temp_instruction++;
-        }
-        if(arbre->type_arbre_t==MON_OPERATION && arbre->frere_t->type_arbre_t==MON_OPERATION){
-            if(!strcmp(arbre->frere_t->label,"+-*") ){
-               
-               acc_temp_instruction++;
-            }else{
-                parcoursArbreInstruction(arbre->frere_t,fd_c);
-
-               acc_temp_instruction++;
-            }
-        }
-        if(arbre->frere_t!=NULL) {
-             parcoursArbreInstruction(arbre->frere_t,fd_c);       
-        }  
-    }else 
-    if(arbre->fils_t!=NULL)
-    {
-        if(arbre->type_arbre_t==MON_FLECHE){
-           
-           acc_temp_instruction++;
-        }
-        if(arbre->fils_t->type_arbre_t==MON_OPERATION && arbre->fils_t->frere_t->type_arbre_t==MON_OPERATION)
-        {
-            if(!strcmp(arbre->fils_t->frere_t->label,"+-*") )  {
-               
-              acc_temp_instruction++;
-                if(!strcmp(arbre->fils_t->label,"+-*")) {
-                  
-                  acc_temp_instruction++;
-                }
-                else{
-                   
-                   acc_temp_instruction++;
-                }
-            }else{
-                
-                acc_temp_instruction++;
-                if(!strcmp(arbre->fils_t->label,"+-*")){
-                   
-                    acc_temp_instruction++;
-                }else{
-                  
-                   acc_temp_instruction++;
-                }
-            }
-        }else if(arbre->type_arbre_t==MON_OPERATION && ( arbre->fils_t->type_arbre_t==MON_OPERATION || arbre->fils_t->frere_t->type_arbre_t==MON_OPERATION)){   
-                 if(!strcmp(arbre->fils_t->label,"+-*")){
-                   
-                   acc_temp_instruction++;
-                }else{
-                   
-                    acc_temp_instruction++;
-                }
-            }
-            parcoursArbreInstruction(arbre->fils_t,fd_c);   
-            if(arbre->frere_t!=NULL) {
-                parcoursArbreInstruction(arbre->frere_t,fd_c);       
-            }
-    }
-}*/
-void parcoursVariable(){
-    
+void parcoursVariable(){   
     struct _arbre *frere_courant = Program->fils_t;
     while(frere_courant->type_arbre_t!=MON_FONCTION)  {
         frere_courant=frere_courant->frere_t;
     }
     struct _symbole *table_courante = frere_courant->symbol_t;
-    
 }

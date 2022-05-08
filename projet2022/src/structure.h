@@ -13,7 +13,7 @@ Resume : Gere la table de donnee en vue de la verification semantique.
 #include <stdio.h>
 #define TAILLE 103
 int ACC;
-int adresseACC;
+
 int flag; // permet de savoir si l'on déclare un extern ou une fonction.
 int acc_new_temp;
 int acc_temp_declaration;
@@ -42,7 +42,8 @@ typedef struct _arbre {
 	 								dont le type est celui de a */
 	struct _arbre *frere_t; // a = 2;  a = 3 ; frere_t = arbre a = 3
 	struct _arbre *fils_t; // a
-	
+	char *var_code;
+	char *code;
 }arbre;
 
 typedef struct _symbole{
@@ -52,6 +53,7 @@ typedef struct _symbole{
 	struct _symbole *param_t;
 	struct _symbole *contenu;
 	struct _symbole *contenu_adresse; // exemple :  int *b; * alors que b = PTR adresse pointe vers un symbole INT
+	int size;
 	int adresse;
 	int nb_param;
 	int var_or_func;
