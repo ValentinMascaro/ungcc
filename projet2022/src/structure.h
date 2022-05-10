@@ -18,6 +18,7 @@ int flag; // permet de savoir si l'on déclare un extern ou une fonction.
 int acc_new_temp;
 int acc_temp_declaration;
 int acc_temp_instruction;
+int acc_temp_declaration_etiquette;
 enum type_arbre{
 	MON_FONCTION, 
 	MON_ITERATION,  // for / while  
@@ -57,6 +58,7 @@ typedef struct _symbole{
 	int adresse;
 	int nb_param;
 	int var_or_func;
+	int extern_or_no;
 } symbole;
 /*
 typedef struct _param{
