@@ -919,12 +919,16 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
         arbre->code=malloc(256);
         if(arbre->fils_t->type_arbre_t==MON_FLECHE)
         {
-            snprintf(arbre->code,256,"%s%s\t*%s = %s;\n",
+            fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
+            snprintf(arbre->code,256,"%s%s\t_var%d=%s;\n\t*%s =_var%d;\n",
             arbre->fils_t->code,
             arbre->fils_t->frere_t->code,
+            acc_temp_declaration,
+            arbre->fils_t->frere_t->var_code,
             arbre->fils_t->var_code,
-            arbre->fils_t->frere_t->var_code);
+            acc_temp_declaration);
             snprintf(arbre->var_code,256,"%s",arbre->fils_t->var_code);
+            acc_temp_declaration++;
         }
         else{
             snprintf(arbre->code,256,"%s%s\t%s = %s;\n",
