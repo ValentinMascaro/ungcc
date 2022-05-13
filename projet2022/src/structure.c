@@ -913,24 +913,27 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
     }
     else if(arbre->type_arbre_t==MON_AFFECT)
     {       
-       
         parcoursArbreDeclaration(arbre->fils_t,fd_c);
         parcoursArbreDeclaration(arbre->fils_t->frere_t,fd_c);
-       
-       
         arbre->var_code=malloc(50);
         arbre->code=malloc(256);
-        snprintf(arbre->code,256,"%s%s\t%s = %s;\n",
-        arbre->fils_t->code,
-        arbre->fils_t->frere_t->code,
-        arbre->fils_t->var_code,
-        arbre->fils_t->frere_t->var_code);
-        snprintf(arbre->var_code,256,"%s",arbre->fils_t->var_code);
-        printf("arbre->code affectation : %s\n",arbre->code);
-       // if(arbre->frere_t!=NULL){
-       
-         //   parcoursArbreDeclaration(arbre->frere_t,fd_c);
-       // }
+        if(arbre->fils_t->type_arbre_t==MON_FLECHE)
+        {
+            snprintf(arbre->code,256,"%s%s\t*%s = %s;\n",
+            arbre->fils_t->code,
+            arbre->fils_t->frere_t->code,
+            arbre->fils_t->var_code,
+            arbre->fils_t->frere_t->var_code);
+            snprintf(arbre->var_code,256,"%s",arbre->fils_t->var_code);
+        }
+        else{
+            snprintf(arbre->code,256,"%s%s\t%s = %s;\n",
+            arbre->fils_t->code,
+            arbre->fils_t->frere_t->code,
+            arbre->fils_t->var_code,
+            arbre->fils_t->frere_t->var_code);
+            snprintf(arbre->var_code,256,"%s",arbre->fils_t->var_code);
+        }
     }
    else if(arbre->type_arbre_t==MON_FLECHE){ // ( -> ( -> a6 c) c ) 
         parcoursArbreDeclaration(arbre->fils_t,fd_c);
@@ -940,7 +943,11 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
         snprintf(new_var,50,"_var%d",acc_temp_declaration);
         fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
         snprintf(arbre->var_code,50,"%s",new_var);
-        snprintf(arbre->code,256,"%s\t%s = %s + %d;\n",arbre->fils_t->code,new_var,arbre->fils_t->var_code,arbre->symbol_t->adresse);
+        snprintf(arbre->code,256,"%s\t%s = %s + %d;\n",
+        arbre->fils_t->code,
+        new_var,
+        arbre->fils_t->var_code,
+        arbre->symbol_t->adresse);
         acc_temp_declaration++;
         
    }else if(arbre->type_arbre_t==MON_APPEL)

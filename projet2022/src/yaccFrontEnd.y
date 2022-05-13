@@ -432,17 +432,18 @@ expression
 declaration
         : declaration_specifiers declarator ';' 
         {
-                
+                printf("jpp\n");
                 if(!strcmp($1,"VOID") && flag == 0){
                         erreur(" type void sur declaration de variable",$2->label);
                 }  
-                verif_redefinition($2->label,TABLE[ACC]);
+              //  verif_redefinition($2->label,TABLE[ACC]);//tds
                 if($2->contenu_adresse==NULL){
                         $2->type_symbol=$1;
                 }else{   
                         $2->contenu_adresse->type_symbol=$1;       
                 }
-                $$=$2; flag = 0; 
+                $$=$2; flag = 0;
+                printf("jpp2\n"); 
         } 
         | struct_specifier ';'  {}
         ;
@@ -567,17 +568,20 @@ direct_declarator
                 
                 printf("declarator de la fonction\n");
                 $$=creer_symbole_fonction($1,"INT",$3);
-                
-                TABLE[0]=ajouter_symbole(TABLE[0],$$); // tds
+               
+              
                
                 if(flag == 0)  {
-                                              
+                                      TABLE[0]=ajouter_symbole(TABLE[0],$$); // tds          
                 }else{
                         $$->extern_or_no = 0;
+                         verif_redefinition($1,TABLE[0]);
                         //printf("free the table for %s flag = %d \n",$1,flag);
                          liberer_tables(); // on viens de déclaré un extern donc on libere sa table d'arg
                 }
-                                                                  /* TABLE[ACC]=ajouter_symbole($$,TABLE[ACC]);*/}
+                                                                  /* TABLE[ACC]=ajouter_symbole($$,TABLE[ACC]);*/
+                
+                    }
         | '(' '*' IDENTIFIER ')' '(' parameter_list_creator ')' 
         { 
                 $$=creer_symbole_fonction($3,"PTR",$6);
