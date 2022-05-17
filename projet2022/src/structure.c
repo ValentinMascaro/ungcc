@@ -1085,6 +1085,7 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
                 arbre->fils_t->var_code,
                 acc_temp_declaration_etiquette,
                 arbre->fils_t->frere_t->code,
+                
                 acc_temp_declaration_etiquette,
                 arbre->fils_t->frere_t->frere_t->code
             );
@@ -1098,6 +1099,7 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
                 arbre->fils_t->var_code,
                 acc_temp_declaration_etiquette,
                 arbre->fils_t->frere_t->code,
+                
                 acc_temp_declaration_etiquette,
                 arbre->fils_t->frere_t->frere_t->code
                 );
@@ -1122,7 +1124,6 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
             else
             {
                 snprintf(arbre->code,256,"%s\tif (%s) goto Lelse%d;\n\t{\n%s\t}\nLelse%d:\n", 
-                
                 arbre->fils_t->code,
                 arbre->fils_t->var_code,
                 acc_temp_declaration_etiquette,
@@ -1139,33 +1140,179 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
     {
         arbre->code=(char*)malloc(sizeof(char)*(65536));;
         arbre->var_code=malloc(50);
+         snprintf(arbre->code,10,'\0');
+         struct _arbre *arbre2=arbre->fils_t;
+        if(!strcmp(arbre2->label,"&&"))
+        {
+            struct _arbre *arbre_if_1=creer_arbre(arbre2->fils_t->label,
+            arbre2->fils_t->type_arbre_t,arbre2->fils_t->symbol_t,arbre2->fils_t->fils_t,NULL);
+            struct _arbre *arbre_if_2=creer_arbre(arbre2->fils_t->frere_t->label,arbre2->fils_t->frere_t->type_arbre_t,arbre2->fils_t->frere_t->symbol_t,arbre2->fils_t->frere_t->fils_t,NULL);
+            arbre_if_2->code=(char*)malloc(sizeof(char)*(256));
+            arbre_if_2->var_code=malloc(50);
+            
+            ajouter_frere(arbre_if_2,arbre->fils_t->frere_t);
+            char *corps_if_2 = malloc(256);
+            parcoursArbreDeclaration(arbre_if_2,fd_c);
+            if(arbre_if_2->type_arbre_t!=MON_OPERATION)
+            {
+               parcoursArbreDeclaration(arbre_if_2->frere_t,fd_c);
+                snprintf(corps_if_2,256,"%s\tif (%s == 0) goto Lelse%d;\n\t{\n%s\t}\n", 
+                    arbre_if_2->code,
+                    arbre_if_2->var_code,
+                    acc_temp_declaration_etiquette,
+                    arbre_if_2->frere_t->code
+                );
+                printf("%s\n",arbre_if_2->code); 
+            }
+            else{
+                parcoursArbreDeclaration(arbre_if_2->frere_t,fd_c);
+                snprintf(corps_if_2,256,"%s\tif (%s) goto Lelse%d;\n\t{\n%s\t}\n", 
+                    arbre_if_2->code,
+                    arbre_if_2->var_code,
+                    acc_temp_declaration_etiquette,
+                    arbre_if_2->frere_t->code
+                );
+                
+            }
+        ////////////
+        parcoursArbreDeclaration(arbre_if_1,fd_c);
+        
+        if(arbre_if_1->type_arbre_t!=MON_OPERATION)
+            {
+                snprintf(arbre->code,65536,"\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n%s\tif(%s != 0) goto LBody%d;\nLelse%d :\n",
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette,
+                corps_if_2,
+                acc_temp_declaration_etiquette,
+                arbre_if_1->code,
+                arbre_if_1->var_code,
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette
+            );
+            acc_temp_declaration_etiquette++;
+            }
+            else{
+                snprintf(arbre->code,65536,"\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n%s\tif(%s) goto LBody%d;\nLelse%d :\n",
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette,
+                corps_if_2,
+                acc_temp_declaration_etiquette,
+                arbre_if_1->code,
+                arbre_if_1->var_code,
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette
+            );
+            acc_temp_declaration_etiquette++;
+            }
+        /////////
+                
+    
+        }
+        
+        /////////////////////// ||
+        else if(!strcmp(arbre2->label,"||"))
+        {
+            struct _arbre *arbre_if_1=creer_arbre(arbre2->fils_t->label,
+            arbre2->fils_t->type_arbre_t,arbre2->fils_t->symbol_t,arbre2->fils_t->fils_t,NULL);
+            struct _arbre *arbre_if_2=creer_arbre(arbre2->fils_t->frere_t->label,arbre2->fils_t->frere_t->type_arbre_t,arbre2->fils_t->frere_t->symbol_t,arbre2->fils_t->frere_t->fils_t,NULL);
+            arbre_if_2->code=(char*)malloc(sizeof(char)*(256));
+            arbre_if_2->var_code=malloc(50);
+            
+            ajouter_frere(arbre_if_2,arbre->fils_t->frere_t);
+            char *corps_if_2 = malloc(256);
+            parcoursArbreDeclaration(arbre_if_2,fd_c);
+            if(arbre_if_2->type_arbre_t!=MON_OPERATION)
+            {
+               parcoursArbreDeclaration(arbre_if_2->frere_t,fd_c);
+                snprintf(corps_if_2,256,"%s\tif (%s == 0) goto Lelse%d;\n\t{\nLbody%d:\n%s\t}\n", 
+                    arbre_if_2->code,
+                    arbre_if_2->var_code,
+                    acc_temp_declaration_etiquette,
+                    acc_temp_declaration_etiquette+1,
+                    arbre_if_2->frere_t->code
+                );
+                printf("%s\n",arbre_if_2->code); 
+            }
+            else{
+                parcoursArbreDeclaration(arbre_if_2->frere_t,fd_c);
+                snprintf(corps_if_2,256,"%s\tif (%s) goto Lelse%d;\n\t{\nLbody%d:\n%s\t}\n", 
+                    arbre_if_2->code,
+                    arbre_if_2->var_code,
+                    acc_temp_declaration_etiquette,
+                    acc_temp_declaration_etiquette+1,
+                    arbre_if_2->frere_t->code
+                );
+                
+            }
+        ////////////
+       
+        parcoursArbreDeclaration(arbre_if_1,fd_c);
+        
+        if(arbre_if_1->type_arbre_t!=MON_OPERATION)
+            {
+                snprintf(arbre->code,65536,"\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n%s\tif(%s != 0) goto LBody%d;\ngoto Lbody%d;\nLelse%d :\n",
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette,
+                corps_if_2,
+                acc_temp_declaration_etiquette,
+                arbre_if_1->code,
+                arbre_if_1->var_code,
+                acc_temp_declaration_etiquette+1,
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette
+            );
+            acc_temp_declaration_etiquette++;
+            }
+            else{
+                snprintf(arbre->code,65536,"\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n%s\tif(%s) goto LBody%d;\ngoto Lbody%d;\nLelse%d :\n",
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette,
+                corps_if_2,
+                acc_temp_declaration_etiquette,
+                arbre_if_1->code,
+                arbre_if_1->var_code,
+                acc_temp_declaration_etiquette+1,
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette
+            );
+            acc_temp_declaration_etiquette++;
+            acc_temp_declaration_etiquette++;
+            }
+        /////////
+                
+    
+        }
+
+        ///////////////////// fin ||
+        else{
         parcoursArbreDeclaration(arbre->fils_t,fd_c);
         parcoursArbreDeclaration(arbre->fils_t->frere_t,fd_c);
-        snprintf(arbre->code,10,'\0');
-        if(arbre->fils_t->type_arbre_t!=MON_OPERATION)
-        {
-            snprintf(arbre->code,65536,"%s\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n\tif(%s != 0) goto LBody%d;\n",
-            
-            arbre->fils_t->code,
-            acc_temp_declaration_etiquette,
-            acc_temp_declaration_etiquette,
-            arbre->fils_t->frere_t->code,
-            acc_temp_declaration_etiquette,
-            arbre->fils_t->var_code,
-            acc_temp_declaration_etiquette
-        );
-        }
-        else{
-            snprintf(arbre->code,65536,"%s\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n\tif(%s) goto LBody%d;\n",
-            
-            arbre->fils_t->code,
-            acc_temp_declaration_etiquette,
-            acc_temp_declaration_etiquette,
-            arbre->fils_t->frere_t->code,
-            acc_temp_declaration_etiquette,
-            arbre->fils_t->var_code,
-            acc_temp_declaration_etiquette
-        );
+            // N'est pas && ou ||
+            if(arbre->fils_t->type_arbre_t!=MON_OPERATION)
+            {
+                snprintf(arbre->code,65536,"\tgoto Ltest%d;\nLBody%d:\n%sLtest%d:\n%s\tif(%s != 0) goto LBody%d;\n",
+                
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette,
+                arbre->fils_t->frere_t->code,
+                acc_temp_declaration_etiquette,
+                arbre->fils_t->code,
+                arbre->fils_t->var_code,
+                acc_temp_declaration_etiquette
+            );
+            }
+            else{
+                snprintf(arbre->code,65536,"\tgoto Ltest%d;\nLBody%d:\n%sLtest%d:\n%s\tif(%s) goto LBody%d;\n",
+                acc_temp_declaration_etiquette,
+                acc_temp_declaration_etiquette,
+                arbre->fils_t->frere_t->code,
+                acc_temp_declaration_etiquette,
+                arbre->fils_t->code,
+                arbre->fils_t->var_code,
+                acc_temp_declaration_etiquette
+            );
+            }
+            acc_temp_declaration_etiquette++;
         }
         
     }
