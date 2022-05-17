@@ -1,0 +1,48 @@
+extern int printd(int i);
+int main()
+{
+	int i;
+	int j;
+	int _var1;
+	int _var2;
+	int _var3;
+	int _var4;
+	int _var5;
+	int _var6;
+	int _var7;
+	int _var8;
+	int _var9;
+	int _var10;
+	int _var11;
+	int _var12;
+	int _var13;
+	int _var14;
+	int _var15;
+	i = 45000;
+	j = -123;
+	_var1 = i - j;
+	printd(_var1);
+	_var2 = 45000 - j;
+	printd(_var2);
+	_var3 = i - 123;
+	printd(_var3);
+	_var4 = 45000 - 123;
+	printd(_var4);
+	_var5 = j + 0;
+	_var6 = i - _var5;
+	printd(_var6);
+	_var7 = i + 0;
+	_var8 = _var7 - j;
+	printd(_var8);
+	_var9 = i + 0;
+	_var10 = j + 0;
+	_var11 =  _var9 - _var10;
+	printd(_var11);
+	_var12 = i + 0;
+	_var13 = _var12 - 123;
+	printd(_var13);
+	_var14 = j + 0;
+	_var15 = 45000 - _var14;
+	printd(_var15);
+	return 0;
+}
