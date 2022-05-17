@@ -432,7 +432,7 @@ expression
 declaration
         : declaration_specifiers declarator ';' 
         {
-                printf("jpp\n");
+                
                 if(!strcmp($1,"VOID") && flag == 0){
                         erreur(" type void sur declaration de variable",$2->label);
                 }  
@@ -443,7 +443,7 @@ declaration
                         $2->contenu_adresse->type_symbol=$1;       
                 }
                 $$=$2; flag = 0;
-                printf("jpp2\n"); 
+                 
         } 
         | struct_specifier ';'  {}
         ;
@@ -566,21 +566,16 @@ direct_declarator
         
         | IDENTIFIER '(' parameter_list_creator ')' { 
                 
-                printf("declarator de la fonction\n");
                 $$=creer_symbole_fonction($1,"INT",$3);
-               
-              
-               
                 if(flag == 0)  {
-                                      TABLE[0]=ajouter_symbole(TABLE[0],$$); // tds          
+                       
+                        TABLE[0]=ajouter_symbole(TABLE[0],$$); // tds 
+                      
                 }else{
                         $$->extern_or_no = 0;
                          verif_redefinition($1,TABLE[0]);
-                        //printf("free the table for %s flag = %d \n",$1,flag);
                          liberer_tables(); // on viens de déclaré un extern donc on libere sa table d'arg
                 }
-                                                                  /* TABLE[ACC]=ajouter_symbole($$,TABLE[ACC]);*/
-                
                     }
         | '(' '*' IDENTIFIER ')' '(' parameter_list_creator ')' 
         { 
@@ -638,13 +633,13 @@ statement
         ;
 
 compound_statement
-        : '{'  '}'   {printf("la\n"); $$ = creer_arbre("corps",MON_BLOC,NULL,NULL,NULL);     }
+        : '{'  '}'   { $$ = creer_arbre("corps",MON_BLOC,NULL,NULL,NULL);     }
         | '{' statement_list '}' {$$ = creer_arbre("corps",MON_BLOC,NULL,$2,NULL); }
        ;
 compound_statement2
         : '{'  '}'   { $$ = creer_arbre("corps",MON_BLOC,NULL,NULL,NULL);     }
         | '{' statement_list '}' {
-                printf("statementliste depuis cps2\n");
+               
                 $$ = creer_arbre("corps",MON_BLOC,NULL,$2,NULL); }
         | '{' declaration_list_local '}' 
         {  
@@ -688,7 +683,7 @@ statement_list
 
 expression_statement
         : ';' {$$ = creer_arbre("0",MON_AUTRE,NULL,NULL,NULL);}
-        | expression ';' { printf("expression maybe\n");$$=$1;}
+        | expression ';' { $$=$1;}
         ;
 
 selection_statement
@@ -872,7 +867,7 @@ external_declaration
                 }else{
                         ajouter_frere(Program->fils_t,$1);    
                 }
-                TABLE[ACC]=ajouter_symbole(TABLE[ACC],$1->symbol_t); //tds
+              //  TABLE[ACC]=ajouter_symbole(TABLE[ACC],$1->symbol_t); //tds
         }
         | declaration 
         {
@@ -928,11 +923,11 @@ int main(void){
         gcc lex.yy.c y.tab.c structure.c -o testYacc */
         init();
         yyparse();
-        printf("--FIN--\n");
+        //printf("--FIN--\n");
       //  affiche_arbre(Program);
         //printf("Symbole");
         //affiche_memoire_symbole();
-        printf("Parcours\n");
+        //printf("Parcours\n");
         clean_file();
         creer_fichier_c(Program);
         return 0;

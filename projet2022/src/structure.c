@@ -930,6 +930,19 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
             snprintf(arbre->var_code,256,"%s",arbre->fils_t->var_code);
             acc_temp_declaration++;
         }
+        else if(arbre->fils_t->type_arbre_t ==MON_OPERATION && arbre->fils_t->frere_t->type_arbre_t == MON_OPERATION)
+        {
+           fprintf(fd_c,"\tvoid *_var%d;\n",acc_temp_declaration);
+            snprintf(arbre->code,256,"%s%s\t_var%d=%s;\n\t%s =_var%d;\n",
+            arbre->fils_t->code,
+            arbre->fils_t->frere_t->code,
+            acc_temp_declaration,
+            arbre->fils_t->frere_t->var_code,
+            arbre->fils_t->var_code,
+            acc_temp_declaration);
+            snprintf(arbre->var_code,256,"%s",arbre->fils_t->var_code);
+            acc_temp_declaration++;
+        }
         else{
             snprintf(arbre->code,256,"%s%s\t%s = %s;\n",
             arbre->fils_t->code,
@@ -1067,7 +1080,7 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
             parcoursArbreDeclaration(arbre->fils_t->frere_t->frere_t,fd_c);
             if(arbre->fils_t->type_arbre_t!=MON_OPERATION)
             {
-                snprintf(arbre->code,256,"%s\tif (%s == 0) goto Lelse%d;\n\t{\n\t%s\t}\nLelse%d:\n\t{\n\t%s\t}\n",
+                snprintf(arbre->code,256,"%s\tif (%s == 0) goto Lelse%d;\n\t{\n\t%s\t}\nLelse%d:\n{\n%s\t}\n",
                 arbre->fils_t->code,
                 arbre->fils_t->var_code,
                 acc_temp_declaration_etiquette,
@@ -1079,7 +1092,8 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
             }
             else
             {
-                snprintf(arbre->code,256,"%s\tif (%s) goto Lelse%d;\n\t{\n\t%s\t}\nLelse%d:\n\t{\n\t%s\t}\n",
+                snprintf(arbre->code,256,"%s\tif (%s) goto Lelse%d;\n\t{\n%s\t}\nLelse%d:\n\t{\n%s\t}\n",
+                
                 arbre->fils_t->code,
                 arbre->fils_t->var_code,
                 acc_temp_declaration_etiquette,
@@ -1095,7 +1109,8 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
             // parcoursArbreDeclaration(arbre->fils_t->frere_t->frere_t,fd_c);
             if(arbre->fils_t->type_arbre_t!=MON_OPERATION)
             {
-                snprintf(arbre->code,256,"%s\tif (%s == 0) goto Lelse%d;\n\t{\n\t%s\t}\nLelse%d:\n\t", 
+                snprintf(arbre->code,256,"%s\tif (%s == 0) goto Lelse%d;\n\t{\n%s\t}\nLelse%d:\n", 
+                
                 arbre->fils_t->code,
                 arbre->fils_t->var_code,
                 acc_temp_declaration_etiquette,
@@ -1106,7 +1121,8 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
             }
             else
             {
-                snprintf(arbre->code,256,"%s\tif (%s) goto Lelse%d;\n\t{\n\t%s\t}\nLelse%d:\n\t", 
+                snprintf(arbre->code,256,"%s\tif (%s) goto Lelse%d;\n\t{\n%s\t}\nLelse%d:\n", 
+                
                 arbre->fils_t->code,
                 arbre->fils_t->var_code,
                 acc_temp_declaration_etiquette,
@@ -1129,6 +1145,7 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
         if(arbre->fils_t->type_arbre_t!=MON_OPERATION)
         {
             snprintf(arbre->code,65536,"%s\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n\tif(%s == 0) goto LBody%d\n",
+            
             arbre->fils_t->code,
             acc_temp_declaration_etiquette,
             acc_temp_declaration_etiquette,
@@ -1140,6 +1157,7 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
         }
         else{
             snprintf(arbre->code,65536,"%s\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n\tif(%s) goto LBody%d\n",
+            
             arbre->fils_t->code,
             acc_temp_declaration_etiquette,
             acc_temp_declaration_etiquette,
