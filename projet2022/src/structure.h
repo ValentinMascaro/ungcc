@@ -87,7 +87,7 @@ void *ajouter_frere(arbre *actuel, arbre *frere);
 void affiche_arbre(arbre *un_arbre);
 
 void new_temp( char *str,size_t len);
-void clean_file();
+/*void clean_file();*/
 void parcoursVariable();
 void parcoursProgramme(arbre *arbre,FILE *fd_c);
 void parscoursFonction(arbre *arbre,FILE *fd_c);

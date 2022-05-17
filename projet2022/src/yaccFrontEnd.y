@@ -714,8 +714,144 @@ selection_statement
                 {
                         $3->label = "==";
                 }
-                ajouter_frere($3,$5);
-                $$=creer_arbre("IF",MON_IF,NULL,$3,NULL);
+                /////////////////echange de condition gauche
+                // CAS &&
+                if(!strcmp($3->label,"&&"))
+                {
+                        if(!strcmp($3->fils_t->label,"<"))
+                        {
+                                $3->fils_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->label,">"))
+                        {
+                                $3->fils_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->label,"<="))
+                        {
+                                $3->fils_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->label,">="))
+                        {
+                                $3->fils_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->label,"=="))
+                        {
+                                $3->fils_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->label,"!="))
+                        {
+                                $3->fils_t->label = "==";
+                        }
+                /////////////////echange de condition gauche
+
+                /////////////////echange de condition droite
+                        if(!strcmp($3->fils_t->frere_t->label,"<"))
+                        {
+                                $3->fils_t->frere_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">"))
+                        {
+                                $3->fils_t->frere_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->frere_t->label,"<="))
+                        {
+                                $3->fils_t->frere_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">="))
+                        {
+                                $3->fils_t->frere_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"=="))
+                        {
+                                $3->fils_t->frere_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"!="))
+                        {
+                                $3->fils_t->frere_t->label = "==";
+                        }
+                /////////////////echange de condition droite
+                struct _arbre *condition1=creer_arbre($3->fils_t->label,$3->fils_t->type_arbre_t,$3->fils_t->symbol_t,$3->fils_t->fils_t,NULL);
+                struct _arbre *condition2=creer_arbre($3->fils_t->frere_t->label,$3->fils_t->frere_t->type_arbre_t,$3->fils_t->frere_t->symbol_t,$3->fils_t->frere_t->fils_t,NULL);
+                
+                struct _arbre *arbre_if = creer_arbre("IF",MON_IF,NULL,condition2,NULL);
+                ajouter_frere(condition1,arbre_if);
+                ajouter_frere(condition2,$5);
+                $$ = creer_arbre("IF",MON_IF,NULL,condition1,NULL);
+                
+                }
+                // CAS || 
+                else if(!strcmp($3->label,"||"))
+                {
+                        if(!strcmp($3->fils_t->label,"<"))
+                        {
+                                $3->fils_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->label,">"))
+                        {
+                                $3->fils_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->label,"<="))
+                        {
+                                $3->fils_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->label,">="))
+                        {
+                                $3->fils_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->label,"=="))
+                        {
+                                $3->fils_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->label,"!="))
+                        {
+                                $3->fils_t->label = "==";
+                        }
+                /////////////////echange de condition gauche
+
+                /////////////////echange de condition droite
+                        if(!strcmp($3->fils_t->frere_t->label,"<"))
+                        {
+                                $3->fils_t->frere_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">"))
+                        {
+                                $3->fils_t->frere_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->frere_t->label,"<="))
+                        {
+                                $3->fils_t->frere_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">="))
+                        {
+                                $3->fils_t->frere_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"=="))
+                        {
+                                $3->fils_t->frere_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"!="))
+                        {
+                                $3->fils_t->frere_t->label = "==";
+                        }
+                /////////////////echange de condition droite
+                struct _arbre *condition1=creer_arbre($3->fils_t->label,$3->fils_t->type_arbre_t,$3->fils_t->symbol_t,$3->fils_t->fils_t,NULL);
+                struct _arbre *condition2=creer_arbre($3->fils_t->frere_t->label,$3->fils_t->frere_t->type_arbre_t,$3->fils_t->frere_t->symbol_t,$3->fils_t->frere_t->fils_t,NULL);
+                
+                struct _arbre *arbre_if = creer_arbre("IF",MON_IF,NULL,condition2,NULL);
+                ajouter_frere(condition1,$5);
+                ajouter_frere($5,arbre_if);
+                struct _arbre *arbre_corps = creer_arbre($5->label,$5->type_arbre_t,$5->symbol_t,$5->fils_t,NULL);
+                ajouter_frere(condition2,arbre_corps);
+                
+                $$ = creer_arbre("IF",MON_IF,NULL,condition1,NULL);
+                
+                }
+                else
+                {
+                        ajouter_frere($3,$5);
+                        $$=creer_arbre("IF",MON_IF,NULL,$3,NULL);
+                }
+                
         }
         | IF '(' expression ')' statement ELSE statement 
         {
@@ -744,9 +880,148 @@ selection_statement
                 {
                         $3->label = "==";
                 }
-                ajouter_frere($3,$5);
-                ajouter_frere($3,$7);
-                $$=creer_arbre("IF",MON_IF,NULL,$3,NULL);
+                 /////////////////echange de condition gauche
+                if(!strcmp($3->label,"&&"))
+                {
+                        if(!strcmp($3->fils_t->label,"<"))
+                        {
+                                $3->fils_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->label,">"))
+                        {
+                                $3->fils_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->label,"<="))
+                        {
+                                $3->fils_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->label,">="))
+                        {
+                                $3->fils_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->label,"=="))
+                        {
+                                $3->fils_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->label,"!="))
+                        {
+                                $3->fils_t->label = "==";
+                        }
+                /////////////////echange de condition gauche
+
+                /////////////////echange de condition droite
+                        if(!strcmp($3->fils_t->frere_t->label,"<"))
+                        {
+                                $3->fils_t->frere_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">"))
+                        {
+                                $3->fils_t->frere_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->frere_t->label,"<="))
+                        {
+                                $3->fils_t->frere_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">="))
+                        {
+                                $3->fils_t->frere_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"=="))
+                        {
+                                $3->fils_t->frere_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"!="))
+                        {
+                                $3->fils_t->frere_t->label = "==";
+                        }
+                /////////////////echange de condition droite
+                struct _arbre *condition1=creer_arbre($3->fils_t->label,$3->fils_t->type_arbre_t,$3->fils_t->symbol_t,$3->fils_t->fils_t,NULL);
+                struct _arbre *condition2=creer_arbre($3->fils_t->frere_t->label,$3->fils_t->frere_t->type_arbre_t,$3->fils_t->frere_t->symbol_t,$3->fils_t->frere_t->fils_t,NULL);
+                
+                struct _arbre *arbre_if = creer_arbre("IF",MON_IF,NULL,condition2,NULL);
+                ajouter_frere(condition1,arbre_if);
+                ajouter_frere(condition1,$7);
+                ajouter_frere(condition2,$5);
+                ajouter_frere(condition2,$7);
+                $$ = creer_arbre("IF",MON_IF,NULL,condition1,NULL);
+                
+                }
+                
+                // CAS || 
+                else if(!strcmp($3->label,"||"))
+                {
+                        if(!strcmp($3->fils_t->label,"<"))
+                        {
+                                $3->fils_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->label,">"))
+                        {
+                                $3->fils_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->label,"<="))
+                        {
+                                $3->fils_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->label,">="))
+                        {
+                                $3->fils_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->label,"=="))
+                        {
+                                $3->fils_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->label,"!="))
+                        {
+                                $3->fils_t->label = "==";
+                        }
+                /////////////////echange de condition gauche
+
+                /////////////////echange de condition droite
+                        if(!strcmp($3->fils_t->frere_t->label,"<"))
+                        {
+                                $3->fils_t->frere_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">"))
+                        {
+                                $3->fils_t->frere_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->frere_t->label,"<="))
+                        {
+                                $3->fils_t->frere_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">="))
+                        {
+                                $3->fils_t->frere_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"=="))
+                        {
+                                $3->fils_t->frere_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"!="))
+                        {
+                                $3->fils_t->frere_t->label = "==";
+                        }
+                /////////////////echange de condition droite
+                struct _arbre *condition1=creer_arbre($3->fils_t->label,$3->fils_t->type_arbre_t,$3->fils_t->symbol_t,$3->fils_t->fils_t,NULL);
+                struct _arbre *condition2=creer_arbre($3->fils_t->frere_t->label,$3->fils_t->frere_t->type_arbre_t,$3->fils_t->frere_t->symbol_t,$3->fils_t->frere_t->fils_t,NULL);
+                
+                struct _arbre *arbre_if = creer_arbre("IF",MON_IF,NULL,condition2,NULL);
+                ajouter_frere(condition1,$5);
+                ajouter_frere($5,arbre_if);
+                
+                struct _arbre *arbre_corps = creer_arbre($5->label,$5->type_arbre_t,$5->symbol_t,$5->fils_t,NULL);
+                ajouter_frere(condition2,arbre_corps);
+                ajouter_frere(condition2,$7);
+                $$ = creer_arbre("IF",MON_IF,NULL,condition1,NULL);
+                
+                }
+                else
+                {
+                        ajouter_frere($3,$5);
+                        ajouter_frere($3,$7);
+                        $$=creer_arbre("IF",MON_IF,NULL,$3,NULL);
+                }
+               
         }
         ;
 
@@ -754,84 +1029,188 @@ iteration_statement
         : WHILE '(' expression ')' statement 
         {
                 
-                if(!strcmp($3->label,"<"))
+                if(!strcmp($3->label,"&&"))
                 {
-                        $3->label = ">=";
+                       if(!strcmp($3->fils_t->frere_t->label,"<"))
+                        {
+                                $3->fils_t->frere_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">"))
+                        {
+                                $3->fils_t->frere_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->frere_t->label,"<="))
+                        {
+                                $3->fils_t->frere_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">="))
+                        {
+                                $3->fils_t->frere_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"=="))
+                        {
+                                $3->fils_t->frere_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"!="))
+                        {
+                                $3->fils_t->frere_t->label = "==";
+                        }
+                        struct _arbre *condition1=creer_arbre($3->fils_t->label,$3->fils_t->type_arbre_t,$3->fils_t->symbol_t,$3->fils_t->fils_t,NULL);
+                        struct _arbre *condition2=creer_arbre($3->fils_t->frere_t->label,$3->fils_t->frere_t->type_arbre_t,$3->fils_t->frere_t->symbol_t,$3->fils_t->frere_t->fils_t,NULL);
+                        
+                        struct _arbre *arbre_if = creer_arbre("IF",MON_IF,NULL,condition2,NULL);
+                        ajouter_frere(condition1,arbre_if);
+                        ajouter_frere(condition2,$5);
+                        $$=creer_arbre("WHILE",MON_ITERATION,NULL,condition1,NULL);
                 }
-                else if(!strcmp($3->label,">"))
+                else
+                if(!strcmp($3->label,"||"))
                 {
-                        $3->label = "<=";
+                       if(!strcmp($3->fils_t->frere_t->label,"<"))
+                        {
+                                $3->fils_t->frere_t->label = ">=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">"))
+                        {
+                                $3->fils_t->frere_t->label = "<=";
+                        }
+                        else  if(!strcmp($3->fils_t->frere_t->label,"<="))
+                        {
+                                $3->fils_t->frere_t->label = ">";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,">="))
+                        {
+                                $3->fils_t->frere_t->label = "<";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"=="))
+                        {
+                                $3->fils_t->frere_t->label = "!=";
+                        }
+                        else if(!strcmp($3->fils_t->frere_t->label,"!="))
+                        {
+                                $3->fils_t->frere_t->label = "==";
+                        }
+                        struct _arbre *condition1=creer_arbre($3->fils_t->label,$3->fils_t->type_arbre_t,$3->fils_t->symbol_t,$3->fils_t->fils_t,NULL);
+                        struct _arbre *condition2=creer_arbre($3->fils_t->frere_t->label,$3->fils_t->frere_t->type_arbre_t,$3->fils_t->frere_t->symbol_t,$3->fils_t->frere_t->fils_t,NULL);
+                        
+                        struct _arbre *arbre_if = creer_arbre("IF",MON_IF,NULL,condition2,NULL);
+                        ajouter_frere(condition1,arbre_if);
+                        ajouter_frere(condition2,$5);
+                        $$=creer_arbre("WHILE",MON_ITERATION,NULL,condition1,NULL);
                 }
-                else  if(!strcmp($3->label,"<="))
+                else
                 {
-                        $3->label = ">";
-                }
-                else if(!strcmp($3->label,">="))
-                {
-                        $3->label = "<";
-                }
-                else if(!strcmp($3->label,"=="))
-                {
-                        $3->label = "!=";
-                }
-                else if(!strcmp($3->label,"!="))
-                {
-                        $3->label = "==";
-                }
                 ajouter_frere($3,$5);
                 $$=creer_arbre("WHILE",MON_ITERATION,NULL,$3,NULL);
-               /*while(1){i=2};
-                [Arbre : While , Feuille 1 , ( Arbre : = , Feuille i , Feuille 2]  ]
-                goto Ltest1;
-                LBody1 : 
-                i = 2;
-                Ltest1 :
-                if(1) goto LBody1; 
-                for(i=0;i<10;i++)
-                i=0
-                while(i<10)
-                { i++ }
+                }
+
                        
-                                                        */}
+        }
         | FOR '(' expression_statement expression_statement expression ')' statement
         {       
                
+             
+                if(!strcmp($4->label,"&&"))
+                {
+                        struct _arbre *condition1=creer_arbre($4->fils_t->label,$4->fils_t->type_arbre_t,$4->fils_t->symbol_t,$4->fils_t->fils_t,NULL);
+                        struct _arbre *condition2=creer_arbre($4->fils_t->frere_t->label,$4->fils_t->frere_t->type_arbre_t,$4->fils_t->frere_t->symbol_t,$4->fils_t->frere_t->fils_t,NULL);
+                        if(!strcmp(condition2->label,"<"))
+                        {
+                                condition2->label = ">=";
+                        }
+                        else if(!strcmp(condition2->label,">"))
+                        {
+                                condition2->label = "<=";
+                        }
+                        else  if(!strcmp(condition2->label,"<="))
+                        {
+                               condition2->label = ">";
+                        }
+                        else if(!strcmp(condition2->label,">="))
+                        {
+                               condition2->label = "<";
+                        }
+                        else if(!strcmp(condition2->label,"=="))
+                        {
+                                condition2->label = "!=";
+                        }
+                        else if(!strcmp(condition2->label,"!="))
+                        {
+                                condition2->label = "==";
+                        }
+                        struct _arbre *arbre_if = creer_arbre("IF",MON_IF,NULL,condition2,NULL);
+                        
+                        ajouter_frere(condition2,$7);
+                       if($7->fils_t==NULL)
+                        {
+                                $7->fils_t=$5;
+                        }else{
+                         ajouter_frere($7->fils_t,$5);        
+                         }
+                         ajouter_frere(condition1,arbre_if);
+                         struct _arbre *bouclepour = creer_arbre("FOR",MON_ITERATION,NULL,condition1,NULL);
+                         ajouter_frere($3,bouclepour);
+                          
+                        $$ = $3;
+                         
+                }
+                else if(!strcmp($4->label,"||"))
+                {
+                        struct _arbre *condition1=creer_arbre($4->fils_t->label,$4->fils_t->type_arbre_t,$4->fils_t->symbol_t,$4->fils_t->fils_t,NULL);
+                        struct _arbre *condition2=creer_arbre($4->fils_t->frere_t->label,$4->fils_t->frere_t->type_arbre_t,$4->fils_t->frere_t->symbol_t,$4->fils_t->frere_t->fils_t,NULL);
+                      if(!strcmp(condition2->label,"<"))
+                        {
+                                condition2->label = ">=";
+                        }
+                        else if(!strcmp(condition2->label,">"))
+                        {
+                                condition2->label = "<=";
+                        }
+                        else  if(!strcmp(condition2->label,"<="))
+                        {
+                               condition2->label = ">";
+                        }
+                        else if(!strcmp(condition2->label,">="))
+                        {
+                               condition2->label = "<";
+                        }
+                        else if(!strcmp(condition2->label,"=="))
+                        {
+                                condition2->label = "!=";
+                        }
+                        else if(!strcmp(condition2->label,"!="))
+                        {
+                                condition2->label = "==";
+                        }
+                        struct _arbre *arbre_if = creer_arbre("IF",MON_IF,NULL,condition2,NULL);
+                        
+                        ajouter_frere(condition2,$7);
+                       if($7->fils_t==NULL)
+                        {
+                                $7->fils_t=$5;
+                        }else{
+                         ajouter_frere($7->fils_t,$5);        
+                         }
+                         ajouter_frere(condition1,arbre_if);
+                         struct _arbre *bouclepour = creer_arbre("FOR",MON_ITERATION,NULL,condition1,NULL);
+                         ajouter_frere($3,bouclepour);
+                          
+                        $$ = $3;
+                         
+                }
+                else{
+                        ajouter_frere($4,$7);
+                        if($7->fils_t==NULL)
+                        {
+                                $7->fils_t=$5;
+                        }else{
+                         ajouter_frere($7->fils_t,$5);        
+                         }
+                         struct _arbre *bouclepour = creer_arbre("FOR",MON_ITERATION,NULL,$4,NULL);
+                        ajouter_frere($3,bouclepour);
+                        $$ = $3;
+                }
                 
-                if(!strcmp($4->label,"<"))
-                {
-                        $4->label = ">=";
-                }
-                else if(!strcmp($4->label,">"))
-                {
-                        $4->label = "<=";
-                }
-                else  if(!strcmp($4->label,"<="))
-                {
-                        $4->label = ">";
-                }
-                else if(!strcmp($4->label,">="))
-                {
-                        $4->label = "<";
-                }
-                else if(!strcmp($4->label,"=="))
-                {
-                        $4->label = "!=";
-                }
-                else if(!strcmp($4->label,"!="))
-                {
-                        $4->label = "==";
-                }
-
-                ajouter_frere($4,$7);
-                if($7->fils_t==NULL)
-                {
-                        $7->fils_t=$5;
-                }else{
-                        ajouter_frere($7->fils_t,$5);        
-                }
-                struct _arbre *bouclepour = creer_arbre("FOR",MON_ITERATION,NULL,$4,NULL);
-                ajouter_frere($3,bouclepour);
-                $$ = $3;
                 /* for(i=0;i<10;i=i+1)
                 [Arbre : "=", i , 0]
                 [Arbre : "FOR", [Arbre : < , i , 10] [ArbreA : = , i , [Arbre : + , i , 1]]]
@@ -928,7 +1307,10 @@ int main(void){
         //printf("Symbole");
         //affiche_memoire_symbole();
         //printf("Parcours\n");
-        clean_file();
+        //clean_file();
         creer_fichier_c(Program);
+        
+        //free(TABLE);
+        free(Program);
         return 0;
 }

@@ -413,14 +413,14 @@ void affiche_memoire_symbole2(symbole *le_symbole){
 }
 
 /* ------ GENERATION ------ */
-
+/*
 void clean_file(){
     if (remove("_tmp_file.c") == 0){
         printf("\n");
     }else{   
        printf("Impossible de supprimer le fichier\n");   
     }
-}
+}*/
 /*
 void new_temp(char *str,size_t len){
     snprintf(str,len,"_var%d",acc_new_temp);
@@ -1144,7 +1144,7 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
         snprintf(arbre->code,10,'\0');
         if(arbre->fils_t->type_arbre_t!=MON_OPERATION)
         {
-            snprintf(arbre->code,65536,"%s\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n\tif(%s == 0) goto LBody%d\n",
+            snprintf(arbre->code,65536,"%s\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n\tif(%s != 0) goto LBody%d;\n",
             
             arbre->fils_t->code,
             acc_temp_declaration_etiquette,
@@ -1156,7 +1156,7 @@ void parcoursArbreDeclaration(arbre *arbre, FILE *fd_c){ // refaire à  l'envers
         );
         }
         else{
-            snprintf(arbre->code,65536,"%s\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n\tif(%s) goto LBody%d\n",
+            snprintf(arbre->code,65536,"%s\tgoto Ltest%d;\nLBody%d :\n%sLtest%d:\n\tif(%s) goto LBody%d;\n",
             
             arbre->fils_t->code,
             acc_temp_declaration_etiquette,
